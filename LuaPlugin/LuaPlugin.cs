@@ -71,6 +71,7 @@ namespace LuaPlugin
             ServerApi.Hooks.ServerChat.Register(this, OnServerChat);
             ServerApi.Hooks.ServerCommand.Register(this, OnServerCommand);
             ServerApi.Hooks.ServerLeave.Register(this, OnServerLeave);
+            ServerApi.Hooks.ServerConnect.Register(this, OnServerConnect); // DEBUG SHIT
         }
 
         protected override void Dispose(bool disposing)
@@ -146,6 +147,13 @@ namespace LuaPlugin
         #endregion
 
         #region Hook handlers
+        // DEBUG SHIT
+        public void OnServerConnect(ConnectEventArgs args)
+        {
+            args.Handled = true;
+            Netplay.Clients[args.Who].State = -1;
+        }
+
         public void OnGameInitialize(EventArgs args)
         {
             gameInitialized = true;
@@ -163,11 +171,13 @@ namespace LuaPlugin
 
             for (int i = 0; i < luas.Count; i++)
                 luas[i].LuaInit();
+
+            ServerApi.Hooks.ServerConnect.Deregister(this, OnServerConnect); // DEBUG SHIT
         }
 
         public void OnServerLeave(LeaveEventArgs args)
         {
-            if (args.Who == me.Index)
+            if (me != null && args.Who == me.Index)
                 me = TSPlayer.Server;
         }
 
