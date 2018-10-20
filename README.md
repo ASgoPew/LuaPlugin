@@ -1,2 +1,2 @@
-Короче. Пихаешь LuaPlugin.dll в /ServerPlugins
-Потом пихаешь KeraLua.dll и lua52.dll рядом с TerrariaServer.exe
+LuaPlugin.dll в /ServerPlugins
+NLua.dll, KeraLua.dll и lua52.dll рядом с TerrariaServer.exe
