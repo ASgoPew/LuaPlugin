@@ -39,7 +39,6 @@ namespace LuaPlugin
         public static int maxTimeAmount = 1000;
         public static int maxUntrustedTimeAmount = 10;
         public static TSPlayer me = null;
-        public static string scriptsDirectory = "lua";
         public static bool gameInitialized = false;
         public static Dictionary<string, object> data = new Dictionary<string, object>();
         public static int untrustedLuaIndex = 0;
@@ -50,8 +49,11 @@ namespace LuaPlugin
         public LuaPlugin(Main game) : base(game)
         {
             instance = this;
-            if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), scriptsDirectory)))
-                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), scriptsDirectory));
+
+            Config.Load();
+
+            if (Config.path != null && !Directory.Exists(Path.Combine(Config.path, Config.key)))
+                Directory.CreateDirectory(Path.Combine(Config.path, Config.key));
 
             if (!ReadLuaEnvironments())
             {
@@ -183,7 +185,22 @@ namespace LuaPlugin
 
         public bool ReadLuaEnvironments()
         {
-            List<string> folders = Directory.GetDirectories(Path.Combine(Directory.GetCurrentDirectory(), scriptsDirectory)).ToList();
+            if (!Directory.Exists(Path.Combine(Path.Combine(Config.path, Config.key), ")")))
+            {
+                // Here generating initial lua scripts directory structure
+                // TODO
+                string path = Path.Combine(Config.path, Config.key);
+                Directory.CreateDirectory(Path.Combine(path, "0"));
+                File.WriteAllText(Path.Combine(path, "init.lua"),
+@"import ('mscorlib', 'System')
+import('TShockAPI', 'TShockAPI')
+
+function print(o)
+    TSPlayer.All:SendInfoMessage(tostring(o))
+    Console.WriteLine(tostring(o))
+end");
+            }
+            List<string> folders = Directory.GetDirectories(Path.Combine(Config.path, Config.key)).ToList();
             folders.Sort(delegate (string folder1, string folder2)
             {
                 int index1, index2;
@@ -205,11 +222,6 @@ namespace LuaPlugin
                     if (!luas[index++].Initialize(null, false))
                         return false;
                 }
-            }
-            if (index == 0)
-            {
-                // Here generating initial lua scripts directory structure
-                // TODO
             }
             return true;
         }

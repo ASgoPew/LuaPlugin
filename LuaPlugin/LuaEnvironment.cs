@@ -51,7 +51,7 @@ namespace LuaPlugin
                     TShock.Log.ConsoleError("TRYING TO DISPOSE ALREADY DISPOSED LUAENVIRONMENT!");
                     return;
                 }
-                CallFunction("OnLuaClose", null, "Initialize");
+                CallFunction("OnLuaClose", null, "Dispose");
                 ClearCommands();
                 lua.Dispose();
                 lua.UseTraceback = true; // TODO: Change (THIS SHIT IS FOR MARKING LUASTATE AS DISPOSED)
@@ -138,7 +138,7 @@ namespace LuaPlugin
 
         public bool ReadLuaEnvironment()
         {
-            List<string> scripts = Directory.EnumerateFiles(Path.Combine(Directory.GetCurrentDirectory(), LuaPlugin.scriptsDirectory), "*.lua", SearchOption.TopDirectoryOnly).ToList();
+            List<string> scripts = Directory.EnumerateFiles(Path.Combine(Config.path, Config.key), "*.lua", SearchOption.TopDirectoryOnly).ToList();
             if (directory != null)
                 scripts = scripts.Concat(Directory.EnumerateFiles(directory, "*.lua", SearchOption.AllDirectories).ToList()).ToList();
             scripts.Sort(delegate (string script1, string script2)
@@ -149,24 +149,11 @@ namespace LuaPlugin
                     return 1;
                 return 0;
             });
-            /*List<FileInfo> scripts = (new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), LuaPlugin.scriptsDirectory)).GetFiles("*.lua").ToList());
-            if (directory != null)
-                scripts = scripts.Concat(new DirectoryInfo(directory).GetFiles("*.lua").ToList()).ToList();
-            scripts.Sort(delegate (FileInfo script1, FileInfo script2)
-            {
-                if (String.Compare(script1.Name, script2.Name) < 0)
-                    return -1;
-                else if (String.Compare(script1.Name, script2.Name) > 0)
-                    return 1;
-                return 0;
-            });*/
             Console.WriteLine("Reading environment: " + index);
             foreach (string script in scripts)
             {
                 string filename = script.Replace(@"\", @"/");
                 Console.WriteLine("\t" + filename);
-                //if (!Execute(File.ReadAllText(script.FullName), null, $"ReadLuaEnvironment (in script {script.Name})", out result))
-                //Console.WriteLine(filename);
                 if (Execute($"dofile('{filename}', '{filename}')", null, $"ReadLuaEnvironment", true) == null)
                     return false;
             }

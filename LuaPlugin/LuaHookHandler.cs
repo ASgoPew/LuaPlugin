@@ -103,6 +103,8 @@ namespace LuaPlugin
             }
         }
 
+        //public static Dictionary<string, Type> HandlerNames = new Dictionary<string, Type>()
+        //  { "OnTick", typeof(EventArgs)
         public static List<string> HandlerNames = new List<string>()
         {
             "OnTick",
@@ -445,8 +447,30 @@ namespace LuaPlugin
             }
         }
 
+        public Action CreateAction()
+        {
+            return () => OnHook(Main.netPlayCounter);
+        }
+
+        public Action<T> CreateAction<T>()
+        {
+            return (T args) => OnHook(args);
+        }
+
+        public HookHandler<T> CreateHookHandler<T>() where T : EventArgs
+        {
+            return new HookHandler<T>((T args) => { OnHook(args); });
+        }
+
+        public EventHandler<T> CreateEventHandler<T>() where T : EventArgs
+        {
+            return new EventHandler<T>((object sender, T args) => { OnHook(args); });
+        }
+
         public LuaHookHandler(LuaEnvironment newLuaEnv, string newName)
         {
+            //handler = GetType().GetMethod("CreateHookHandler").MakeGenericMethod(typeof(DropBossBagEventArgs)).Invoke(this, null);
+
             luaEnv = newLuaEnv;
             name = newName;
             switch (name)
@@ -641,6 +665,7 @@ namespace LuaPlugin
                     break;
                 case "OnRegionLeft":
                     handler = new RegionHooks.RegionLeftD((RegionHooks.RegionLeftEventArgs args) => { OnHook(args); });
+                    handler = CreateAction<RegionHooks.RegionLeftEventArgs>();
                     break;
 
                 // TShockAPI.TShock
