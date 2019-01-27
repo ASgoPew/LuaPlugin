@@ -185,7 +185,7 @@ namespace LuaPlugin
 
         public bool ReadLuaEnvironments()
         {
-            if (!Directory.Exists(Path.Combine(Path.Combine(Config.path, Config.key), ")")))
+            if (!Directory.Exists(Path.Combine(Path.Combine(Config.path, Config.key), "0")))
             {
                 // Here generating initial lua scripts directory structure
                 // TODO
