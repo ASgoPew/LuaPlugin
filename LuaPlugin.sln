@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LuaPlugin", "LuaPlugin\LuaPlugin.csproj", "{10C51A09-F455-4087-A9F3-9B533CA5346E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLuaTest", "NLuaTest\NLuaTest.csproj", "{6B27AB8A-924D-43E4-9FC3-42E764A815A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +17,15 @@ Global
 		{10C51A09-F455-4087-A9F3-9B533CA5346E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10C51A09-F455-4087-A9F3-9B533CA5346E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{10C51A09-F455-4087-A9F3-9B533CA5346E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B27AB8A-924D-43E4-9FC3-42E764A815A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B27AB8A-924D-43E4-9FC3-42E764A815A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B27AB8A-924D-43E4-9FC3-42E764A815A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B27AB8A-924D-43E4-9FC3-42E764A815A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {927EFDF7-218F-4E27-AEBE-DC283D866989}
 	EndGlobalSection
 EndGlobal

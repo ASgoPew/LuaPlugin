@@ -88,6 +88,7 @@ namespace LuaPlugin
                         Dispose();
                     }
                     Lua = new Lua();
+                    Lua.State.Encoding = Encoding.UTF8;
                     Lua.LoadCLRPackage();
 
                     Data["source"] = this;
