@@ -14,6 +14,14 @@ namespace LuaPlugin
         public static string path = "lua";
         [JsonProperty]
         public static string key = "server1";
+        [JsonProperty]
+        public static string command_specifier = ";";
+        [JsonProperty]
+        public static string control_permission = "lua.control";
+        [JsonProperty]
+        public static string execute_permission = "lua.execute";
+        [JsonProperty]
+        public static int untrusted_lua_index = 0;
 
         #region Write
 

@@ -10,48 +10,44 @@ namespace LuaPlugin
 {
     public class LuaCommand
     {
-        private bool disposed = false;
-        public LuaFunction f;
-        public LuaEnvironment luaEnv;
-        public Lua lua;
-        public Command cmd;
+        private bool Disposed = false;
+        public LuaFunction Function;
+        public LuaEnvironment LuaEnv;
+        public Lua Lua;
+        public Command Cmd;
 
-        public LuaCommand(LuaEnvironment luaEnv, object names_object, object permission_object, LuaTable parameters, LuaFunction f)
+        public LuaCommand(LuaEnvironment luaEnv, object namesObject, object permissionObject, LuaTable parameters, LuaFunction function)
         {
-            this.f = f;
-            this.luaEnv = luaEnv;
-            this.lua = luaEnv.GetState(); // TODO: Changing f might crash on Dispose, since new f can have different interpreter
+            this.Function = function;
+            this.LuaEnv = luaEnv;
+            this.Lua = luaEnv.GetState(); // TODO: Changing f might crash on Dispose, since new f can have different interpreter
             string[] names;
-            if (names_object.GetType() == typeof(LuaTable))
+            if (namesObject.GetType() == typeof(LuaTable))
             {
-                LuaTable t = names_object as LuaTable;
+                LuaTable t = namesObject as LuaTable;
                 names = new string[t.Keys.Count];
                 int i = 0;
                 foreach (var o in t)
                 {
                     names[i++] = (string)(((KeyValuePair<Object, Object>)o).Value);
                 }
-            } else if (names_object.GetType() == typeof(string))
-            {
-                names = new string[1] { (string)names_object };
-            } else
+            }
+            else if (namesObject.GetType() == typeof(string))
+                names = new string[1] { (string)namesObject };
+            else
             {
                 luaEnv.PrintError("LuaCommand.LuaCommand(LuaEnvironment luaEnv, object names_object, object permission_object, LuaTable parameters, LuaFunction f): Invalid parameters");
                 return;
             }
             List<string> permissions = new List<string>();
-            if (permission_object.GetType() == typeof(LuaTable))
+            if (permissionObject.GetType() == typeof(LuaTable))
             {
-                LuaTable t = permission_object as LuaTable;
+                LuaTable t = permissionObject as LuaTable;
                 foreach (var o in t)
-                {
                     permissions.Add((string)((KeyValuePair < Object, Object >)o).Value);
-                }
             }
-            else if (permission_object.GetType() == typeof(string))
-            {
-                permissions.Add((string)permission_object);
-            }
+            else if (permissionObject.GetType() == typeof(string))
+                permissions.Add((string)permissionObject);
             else
             {
                 luaEnv.PrintError("LuaCommand.LuaCommand(LuaEnvironment luaEnv, object names_object, object permission_object, LuaTable parameters, LuaFunction f): Invalid parameters");
@@ -60,50 +56,50 @@ namespace LuaPlugin
             bool allowServer = (bool)(parameters["AllowServer"] ?? false);
             string helpText = (string)(parameters["HelpText"] ?? "Temporarily command");
             bool doLog = (bool)(parameters["DoLog"] ?? false);
-            this.cmd = new Command(permissions, Invoke, names)
+            this.Cmd = new Command(permissions, Invoke, names)
             {
                 AllowServer = allowServer,
                 HelpText = helpText,
                 DoLog = doLog
             };
-            Commands.ChatCommands.Add(cmd);
-            luaEnv.luaCommands.Add(this);
+            Commands.ChatCommands.Add(Cmd);
+            luaEnv.LuaCommands.Add(this);
         }
 
         public void Dispose(bool removeFromList = true)
         {
-            if (disposed)
+            if (Disposed)
                 return;
-            disposed = true;
+            Disposed = true;
 
-            Commands.ChatCommands.Remove(cmd);
+            Commands.ChatCommands.Remove(Cmd);
             if (removeFromList)
-                luaEnv.luaCommands.Remove(this);
-            if (!lua.UseTraceback) // WILL THIS CRASH????????????????????????????????????????????????????
-                f.Dispose();
-            f = null;
-            luaEnv = null;
-            lua = null;
-            cmd = null;
+                LuaEnv.LuaCommands.Remove(this);
+            if (!Lua.UseTraceback) // WILL THIS CRASH?
+                Function.Dispose();
+            Function = null;
+            LuaEnv = null;
+            Lua = null;
+            Cmd = null;
         }
 
         public void Invoke(CommandArgs args)
         {
-            if (disposed)
+            if (Disposed)
             {
-                luaEnv.PrintError("LuaCommand " + cmd.Name + " is already disposed but trying to invoke it.");
+                LuaEnv.PrintError("LuaCommand " + Cmd.Name + " is already disposed but trying to invoke it.");
                 return;
             }
-            if (!lua.UseTraceback)
+            if (!Lua.UseTraceback)
             {
-                object oldSource = luaEnv.data["source"];
-                luaEnv.data["sourse"] = this;
-                luaEnv.CallFunction(f, null, "LuaCommand.Invoke", args);
-                luaEnv.data["source"] = oldSource;
+                object oldSource = LuaEnv.Data["source"];
+                LuaEnv.Data["sourse"] = this;
+                LuaEnv.CallFunction(Function, null, "LuaCommand.Invoke", args);
+                LuaEnv.Data["source"] = oldSource;
             }
             else
             {
-                luaEnv.PrintError("Trying to invoke LuaCommand " + cmd.Name + " while corresponding lua instance is already disposed.");
+                LuaEnv.PrintError("Trying to invoke LuaCommand " + Cmd.Name + " while corresponding lua instance is already disposed.");
                 Dispose();
             }
         }

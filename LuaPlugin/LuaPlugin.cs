@@ -23,32 +23,22 @@ namespace LuaPlugin
         public override string Description => "Plugin that provides lua to server development";
         public override string Name => "LuaPlugin";
         public override Version Version => new Version(1, 0, 0, 0);
-
-        //public static LuaEnvironment luaEnv { get => luas[luaIndex]; }
-
-        public static LuaPlugin instance = null;
-        public static List<LuaEnvironment> luas = new List<LuaEnvironment>();
-        //public static int luaIndex = 0;
-        public static int[] luaEnvIndex = new int[Main.maxPlayers + 1];
-        public static int specialLuaEnvIndex = 0;
-        public static string luaCommandSpecifier = ";";
-        public static string luaPrintCommandSpecifier = ";;";
-        public static string luaShowCommandSpecifier = ";=";
-        public static string luaSharpShowCommandSpecifier = ";-";
-        public static string luaOnTickCommandSpecifier = ";;;";
-        public static int maxTimeAmount = 1000;
-        public static int maxUntrustedTimeAmount = 10;
-        public static TSPlayer me = null;
-        public static bool gameInitialized = false;
-        public static Dictionary<string, object> data = new Dictionary<string, object>();
-        public static int untrustedLuaIndex = 0;
-        //public static string databaseName = "luadb";
-        //public static int maxInstructionsCount = 1000000000;
+        
+        public static LuaPlugin Instance = null;
+        public static List<LuaEnvironment> Luas = new List<LuaEnvironment>();
+        public static int[] LuaEnvIndex = new int[Main.maxPlayers + 1];
+        public static string PrintCommandSpecifier = ";;";
+        public static string ShowCommandSpecifier = ";=";
+        public static string SharpShowCommandSpecifier = ";-";
+        public static string OnTickCommandSpecifier = ";;;";
+        public static TSPlayer Me = null;
+        public static bool GameInitialized = false;
+        public static Dictionary<string, object> Data = new Dictionary<string, object>();
 
         #region Construction/destruction
         public LuaPlugin(Main game) : base(game)
         {
-            instance = this;
+            Instance = this;
 
             Config.Load();
 
@@ -62,8 +52,8 @@ namespace LuaPlugin
                 //TShockAPI.Utils.Instance.StopServer(false, "Lua cannot initialize."); // TShock won't be initialized at this point
             }
 
-            for (int i = 0; i < luaEnvIndex.Length; i++)
-                luaEnvIndex[i] = 0;
+            for (int i = 0; i < LuaEnvIndex.Length; i++)
+                LuaEnvIndex[i] = 0;
         }
 
         public override void Initialize()
@@ -86,13 +76,14 @@ namespace LuaPlugin
                 ServerApi.Hooks.ServerCommand.Deregister(this, OnServerCommand);
                 ServerApi.Hooks.ServerLeave.Deregister(this, OnServerLeave);
             }
-            foreach (LuaEnvironment l in luas)
+            foreach (LuaEnvironment l in Luas)
                 l.Dispose();
             base.Dispose(disposing);
         }
         #endregion
 
         #region Helper data and methods
+
         //public delegate void handler0();
         //public delegate void handler1(EventArgs args);
         //public delegate void handler2(object sender, EventArgs args);
@@ -158,7 +149,7 @@ namespace LuaPlugin
 
         public void OnGameInitialize(EventArgs args)
         {
-            gameInitialized = true;
+            GameInitialized = true;
 
             Commands.ChatCommands.Add(new Command(new List<string> { "lua.contol" }, LuaChatCommand, "lua")
             {
@@ -169,18 +160,18 @@ namespace LuaPlugin
 
         public void OnGamePostInitialize(EventArgs args)
         {
-            me = TSPlayer.Server;
+            Me = TSPlayer.Server;
 
-            for (int i = 0; i < luas.Count; i++)
-                luas[i].LuaInit();
+            for (int i = 0; i < Luas.Count; i++)
+                Luas[i].LuaInit();
 
             ServerApi.Hooks.ServerConnect.Deregister(this, OnServerConnect); // DEBUG SHIT
         }
 
         public void OnServerLeave(LeaveEventArgs args)
         {
-            if (me != null && args.Who == me.Index)
-                me = TSPlayer.Server;
+            if (Me != null && args.Who == Me.Index)
+                Me = TSPlayer.Server;
         }
 
         public bool ReadLuaEnvironments()
@@ -218,8 +209,8 @@ end");
             {
                 if (Path.GetFileName(envDir) == index.ToString())
                 {
-                    luas.Add(new LuaEnvironment(index, envDir));
-                    if (!luas[index++].Initialize(null, false))
+                    Luas.Add(new LuaEnvironment(index, envDir));
+                    if (!Luas[index++].Initialize(null, false))
                         return false;
                 }
             }
@@ -228,9 +219,10 @@ end");
 
         public void OnServerChat(ServerChatEventArgs args)
         {
-            if (!TShock.Players[args.Who].HasPermission("lua.execute"))
+            TSPlayer player = TShock.Players[args.Who];
+            if (!player.HasPermission(Config.execute_permission))
                 return;
-            args.Handled = args.Handled || CheckLuaInput(TShock.Players[args.Who], args.Text);
+            args.Handled = args.Handled || CheckLuaInput(player, args.Text);
         }
 
         public void OnServerCommand(CommandEventArgs args)
@@ -241,9 +233,9 @@ end");
         // TODO: Refactor it and make ability to customize every alias and aliases count
         public static bool CheckLuaInput(TSPlayer player, string text)
         {
-            if (text.StartsWith(luaOnTickCommandSpecifier))
+            if (text.StartsWith(OnTickCommandSpecifier))
             {
-                string onTickBody = text.Substring(luaOnTickCommandSpecifier.Length);
+                string onTickBody = text.Substring(OnTickCommandSpecifier.Length);
                 LuaEnvironment lua = player.LuaEnv();
                 if (onTickBody.Length > 0)
                     RunLua(player, "OnTick = function(frame) " + onTickBody + " end"); // OnTick or OnUpdate?
@@ -251,24 +243,24 @@ end");
                     lua.Unhook("OnTick");
                 return true;
             }
-            else if (text.StartsWith(luaPrintCommandSpecifier))
+            else if (text.StartsWith(PrintCommandSpecifier))
             {
-                RunLua(player, "print(" + text.Substring(luaPrintCommandSpecifier.Length) + ")");
+                RunLua(player, "print(" + text.Substring(PrintCommandSpecifier.Length) + ")");
                 return true;
             }
-            else if (text.StartsWith(luaShowCommandSpecifier) && text.Length > luaShowCommandSpecifier.Length)
+            else if (text.StartsWith(ShowCommandSpecifier) && text.Length > ShowCommandSpecifier.Length)
             {
-                RunLua(player, "show(" + text.Substring(luaShowCommandSpecifier.Length) + ")");
+                RunLua(player, "show(" + text.Substring(ShowCommandSpecifier.Length) + ")");
                 return true;
             }
-            else if (text.StartsWith(luaSharpShowCommandSpecifier) && text.Length > luaSharpShowCommandSpecifier.Length)
+            else if (text.StartsWith(SharpShowCommandSpecifier) && text.Length > SharpShowCommandSpecifier.Length)
             {
-                RunLua(player, "print(SharpShow(" + text.Substring(luaSharpShowCommandSpecifier.Length) + "))");
+                RunLua(player, "print(SharpShow(" + text.Substring(SharpShowCommandSpecifier.Length) + "))");
                 return true;
             }
-            else if (text.StartsWith(luaCommandSpecifier) && text.Length > luaCommandSpecifier.Length)
+            else if (text.StartsWith(Config.command_specifier) && text.Length > Config.command_specifier.Length)
             {
-                RunLua(player, text.Substring(luaCommandSpecifier.Length));
+                RunLua(player, text.Substring(Config.command_specifier.Length));
                 return true;
             }
             return false;
@@ -323,52 +315,52 @@ end");
 
         public void InitializeLuaCommand(CommandArgs args)
         {
-            me = args.Player;
+            Me = args.Player;
             if (args.Parameters.Count == 1)
             {
                 LuaEnvironment lua = args.Player.LuaEnv();
-                if (lua.Initialize(me, true))
-                    me.SendSuccessMessage($"Lua[{lua.index}] has been reset.");
+                if (lua.Initialize(Me, true))
+                    Me.SendSuccessMessage($"Lua[{lua.Index}] has been reset.");
                 else
-                    me.SendErrorMessage($"Lua[{lua.index}] reset failed.");
+                    Me.SendErrorMessage($"Lua[{lua.Index}] reset failed.");
             } else if (args.Parameters.Count == 2)
             {
                 if (args.Parameters[1].ToLower() == "all")
                 {
-                    for (int i = 0; i < luas.Count; i++)
+                    for (int i = 0; i < Luas.Count; i++)
                     {
-                        if (!luas[i].Initialize(me, true))
+                        if (!Luas[i].Initialize(Me, true))
                         {
-                            me.SendErrorMessage($"Lua[{i}] reset failed.");
+                            Me.SendErrorMessage($"Lua[{i}] reset failed.");
                             return;
                         }
                     }
-                    me.SendSuccessMessage($"All Luas have been reset.");
+                    Me.SendSuccessMessage($"All Luas have been reset.");
                     return;
                 }
                 int index;
-                if (!Int32.TryParse(args.Parameters[1], out index) || index < 0 || index >= luas.Count)
+                if (!Int32.TryParse(args.Parameters[1], out index) || index < 0 || index >= Luas.Count)
                 {
-                    me.SendErrorMessage("Index must be a number and in array bounds.");
+                    Me.SendErrorMessage("Index must be a number and in array bounds.");
                     return;
                 }
-                if (luas[index].Initialize(me, true))
-                    me.SendSuccessMessage($"Lua[{index}] has been reset.");
+                if (Luas[index].Initialize(Me, true))
+                    Me.SendSuccessMessage($"Lua[{index}] has been reset.");
                 else
-                    me.SendErrorMessage($"Lua[{index}] reset failed.");
+                    Me.SendErrorMessage($"Lua[{index}] reset failed.");
             }
         }
 
         public void AddLuaCommand(CommandArgs args)
         {
             //me = args.Player;
-            LuaEnvironment lua = new LuaEnvironment(luas.Count);
-            luas.Add(lua);
-            if (!args.Player.LuaEnv().Initialize(me, true))
+            LuaEnvironment lua = new LuaEnvironment(Luas.Count);
+            Luas.Add(lua);
+            if (!args.Player.LuaEnv().Initialize(Me, true))
                 return;
-            luaEnvIndex[args.Player.Index >= 0 ? args.Player.Index : Main.maxPlayers] = lua.index;
-            args.Player.SendSuccessMessage($"New lua[{lua.index}] added.");
-            args.Player.SendInfoMessage($"Shifting to lua[{lua.index}]");
+            LuaEnvIndex[args.Player.Index >= 0 ? args.Player.Index : Main.maxPlayers] = lua.Index;
+            args.Player.SendSuccessMessage($"New lua[{lua.Index}] added.");
+            args.Player.SendInfoMessage($"Shifting to lua[{lua.Index}]");
         }
 
         public void SelectLuaCommand(CommandArgs args)
@@ -379,12 +371,12 @@ end");
                 return;
             }
             int index;
-            if (!Int32.TryParse(args.Parameters[1], out index) || index < 0 || index >= luas.Count)
+            if (!Int32.TryParse(args.Parameters[1], out index) || index < 0 || index >= Luas.Count)
             {
                 args.Player.SendErrorMessage("Index must be a number and in array bounds.");
                 return;
             }
-            luaEnvIndex[args.Player.Index >= 0 ? args.Player.Index : Main.maxPlayers] = index;
+            LuaEnvIndex[args.Player.Index >= 0 ? args.Player.Index : Main.maxPlayers] = index;
             args.Player.SendSuccessMessage($"Shifting to lua[{index}]");
         }
 
@@ -396,27 +388,27 @@ end");
                 return;
             }
             int index;
-            if (!Int32.TryParse(args.Parameters[1], out index) || index <= 0 || index >= luas.Count)
+            if (!Int32.TryParse(args.Parameters[1], out index) || index <= 0 || index >= Luas.Count)
             {
                 args.Player.SendErrorMessage("Index must be a number, > 0 (you can't remove lua[0]) and in array bounds.");
                 return;
             }
-            luas[index].Dispose();
-            luas.RemoveAt(index);
-            for (int i = index; i < luas.Count; i++)
-                luas[i].index = i;
+            Luas[index].Dispose();
+            Luas.RemoveAt(index);
+            for (int i = index; i < Luas.Count; i++)
+                Luas[i].Index = i;
             for (int i = 0; i < 255; i++)
             {
-                if (luaEnvIndex[i] == index)
+                if (LuaEnvIndex[i] == index)
                 {
-                    luaEnvIndex[i] = 0;
+                    LuaEnvIndex[i] = 0;
                     if (TShock.Players[i] != null && TShock.Players[i].Active)
                         TShock.Players[i].SendSuccessMessage($"Removed lua[{index}], shifting to lua[0].");
                 } else
                     args.Player.SendSuccessMessage($"Removed lua[{index}]");
             }
-            if (luaEnvIndex[Main.maxPlayers] == index)
-                luaEnvIndex[Main.maxPlayers] = 0;
+            if (LuaEnvIndex[Main.maxPlayers] == index)
+                LuaEnvIndex[Main.maxPlayers] = 0;
         }
 
         public void HelpLuaCommand(CommandArgs args)
@@ -458,15 +450,15 @@ end");
 
             // TODO: Make unsafe userscript run ability (since currently all hooks wait for all other scripts to end)
             // Just let hooks run in another LuaEnvironment
-            object oldSource = lua.data["source"];
+            object oldSource = lua.Data["source"];
             if (lua.Execute(command, (_lua, state) => {
                 if (state == 0)
                 {
-                    me = player;
-                    lua.data["source"] = me;
+                    Me = player;
+                    lua.Data["source"] = Me;
                 }
                 else if (state > 0)
-                    lua.data["source"] = oldSource;
+                    lua.Data["source"] = oldSource;
             }, $"LuaThreadFunction") == null)
                 return;
             if (player.HasPermission("lua.control"))
@@ -476,17 +468,17 @@ end");
         public object GetData(string key)
         {
             object result;
-            lock (data)
+            lock (Data)
             {
-                data.TryGetValue(key, out result);
+                Data.TryGetValue(key, out result);
                 return result;
             }
         }
 
         public void SetData(string key, object value)
         {
-            lock (data)
-                data[key] = value;
+            lock (Data)
+                Data[key] = value;
         }
 
         public static string Test(string s)

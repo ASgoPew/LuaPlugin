@@ -20,55 +20,55 @@ namespace LuaPlugin
 {
     public class LuaEnvironment : IDisposable
     {
-        public static int lastExceptionLuaIndex = -1;
+        public static int LastExceptionLuaIndex = -1;
 
-        public int index;
-        private Lua lua = null;
-        private Dictionary<string, LuaHookHandler> handlers = new Dictionary<string, LuaHookHandler>();
-        public string directory = null;
-        public Exception lastException = null;
-        public List<LuaCommand> luaCommands = new List<LuaCommand>();
-        private object locker = new object();
-        public Dictionary<string, object> data = new Dictionary<string, object>();
-        public bool enabled = false;
-        public bool forceStopped = false;
-        public bool printErrorStarted = false;
+        public int Index;
+        private Lua Lua = null;
+        private Dictionary<string, LuaHookHandler> Handlers = new Dictionary<string, LuaHookHandler>();
+        public string LuaDirectory = null;
+        public Exception LastException = null;
+        public List<LuaCommand> LuaCommands = new List<LuaCommand>();
+        private object Locker = new object();
+        public Dictionary<string, object> Data = new Dictionary<string, object>();
+        public bool Enabled = false;
+        public bool ForceStopped = false;
+        public bool PrintErrorStarted = false;
 
         public LuaEnvironment(int index, string directory = null)
         {
-            this.index = index;
-            this.directory = directory;
+            this.Index = index;
+            this.LuaDirectory = directory;
             foreach (string name in LuaHookHandler.HandlerNames) // TODO: Add handlers only on hook registration?
-                handlers.Add(name, new LuaHookHandler(this, name));
+                Handlers.Add(name, new LuaHookHandler(this, name));
         }
 
         public void Dispose()
         {
-            lock (locker)
+            lock (Locker)
             {
-                if (lua.UseTraceback)
+                if (Lua.UseTraceback)
                 {
                     TShock.Log.ConsoleError("TRYING TO DISPOSE ALREADY DISPOSED LUAENVIRONMENT!");
                     return;
                 }
                 CallFunction("OnLuaClose", null, "Dispose");
                 ClearCommands();
-                lua.Dispose();
-                lua.UseTraceback = true; // TODO: Change (THIS SHIT IS FOR MARKING LUASTATE AS DISPOSED)
+                Lua.Dispose();
+                Lua.UseTraceback = true; // TODO: Change (THIS SHIT IS FOR MARKING LUASTATE AS DISPOSED)
                 //lua = null;
             }
         }
 
         public void ClearCommands()
         {
-            foreach (var c in luaCommands)
+            foreach (var c in LuaCommands)
                 c.Dispose(false);
-            luaCommands.Clear();
+            LuaCommands.Clear();
         }
 
         public Lua GetState()
         {
-            return lua;
+            return Lua;
         }
 
         public bool HasPermission(string perm)
@@ -80,20 +80,20 @@ namespace LuaPlugin
         {
             try
             {
-                lock (locker)
+                lock (Locker)
                 {
-                    if (lua != null)
+                    if (Lua != null)
                     {
                         UnhookAll(); // Here enabled is already true since lua != null
                         Dispose();
                     }
-                    lua = new Lua();
-                    lua.LoadCLRPackage();
+                    Lua = new Lua();
+                    Lua.LoadCLRPackage();
 
-                    data["source"] = this;
+                    Data["source"] = this;
 
-                    lua["env"] = this;
-                    lua["plugin"] = LuaPlugin.instance;
+                    Lua["env"] = this;
+                    Lua["plugin"] = LuaPlugin.Instance;
 
                     //lua.RegisterLuaClassType(typeof(Microsoft.Xna.Framework.Color), typeof(Microsoft.Xna.Framework.Color));
 
@@ -108,7 +108,7 @@ namespace LuaPlugin
                     //lua.RegisterFunction("GetRAMUsage", typeof(LuaHelper).GetMethod("GetRAMUsage")).Dispose();
                     //lua.RegisterFunction("packetstr", typeof(LuaHelper).GetMethod("PacketString")).Dispose();
                     //lua.RegisterFunction("SharpShow", typeof(LuaHelper).GetMethod("SharpShow")).Dispose();
-                    lua.RegisterFunction("NetworkText", typeof(NetworkText).GetMethod("FromLiteral")).Dispose();
+                    Lua.RegisterFunction("NetworkText", typeof(NetworkText).GetMethod("FromLiteral")).Dispose();
                     //lua.RegisterFunction("e", typeof(LuaEnvironment).GetMethod("ShowLastException")).Dispose();
                     //lua.RegisterFunction("Test", typeof(LuaPlugin).GetMethod("Test")).Dispose();
                     // TODO: RegisterClass LuaHelper insdead of ^
@@ -118,7 +118,7 @@ namespace LuaPlugin
                 HandleException(e, "Initialize");
                 return false;
             }
-            enabled = true;
+            Enabled = true;
 
             //if (me != null)
                 //Set("me", me);
@@ -139,8 +139,8 @@ namespace LuaPlugin
         public bool ReadLuaEnvironment()
         {
             List<string> scripts = Directory.EnumerateFiles(Path.Combine(Config.path, Config.key), "*.lua", SearchOption.TopDirectoryOnly).ToList();
-            if (directory != null)
-                scripts = scripts.Concat(Directory.EnumerateFiles(directory, "*.lua", SearchOption.AllDirectories).ToList()).ToList();
+            if (LuaDirectory != null)
+                scripts = scripts.Concat(Directory.EnumerateFiles(LuaDirectory, "*.lua", SearchOption.AllDirectories).ToList()).ToList();
             scripts.Sort(delegate (string script1, string script2)
             {
                 if (String.Compare(Path.GetFileNameWithoutExtension(script1), Path.GetFileNameWithoutExtension(script2)) < 0)
@@ -149,7 +149,7 @@ namespace LuaPlugin
                     return 1;
                 return 0;
             });
-            Console.WriteLine("Reading environment: " + index);
+            Console.WriteLine("Reading environment: " + Index);
             foreach (string script in scripts)
             {
                 string filename = script.Replace(@"\", @"/");
@@ -172,16 +172,16 @@ namespace LuaPlugin
 
         public object Get(string name, string exceptionMessage = "")
         {
-            if (!enabled)
+            if (!Enabled)
                 return null;
             try
             {
-                Lua oldLua = lua;
-                lock (locker)
+                Lua oldLua = Lua;
+                lock (Locker)
                 {
                     if (oldLua.UseTraceback)
                         return false;
-                    return lua[name];
+                    return Lua[name];
                 }
             } catch
             {
@@ -192,7 +192,7 @@ namespace LuaPlugin
 
         public void Set(string name, object o, string exceptionMessage = "")
         {
-            if (!enabled)
+            if (!Enabled)
                 return;
             if (o == null)
             {
@@ -201,12 +201,12 @@ namespace LuaPlugin
             }
             try
             {
-                Lua oldLua = lua;
-                lock (locker)
+                Lua oldLua = Lua;
+                lock (Locker)
                 {
                     if (oldLua.UseTraceback)
                         return;
-                    lua[name] = o;
+                    Lua[name] = o;
                 }
             }
             catch
@@ -218,16 +218,16 @@ namespace LuaPlugin
 
         public void SetNull(string name, string exceptionMessage = "")
         {
-            if (!enabled)
+            if (!Enabled)
                 return;
             try
             {
-                Lua oldLua = lua;
-                lock (locker)
+                Lua oldLua = Lua;
+                lock (Locker)
                 {
                     if (oldLua.UseTraceback)
                         return;
-                    lua[name] = null;
+                    Lua[name] = null;
                 }
             }
             catch
@@ -264,7 +264,7 @@ namespace LuaPlugin
 
         public object[] Execute(string script, Action<Lua, int> update, string exceptionMessage, bool trusted = false, object arg = null)
         {
-            if (!enabled)
+            if (!Enabled)
                 return null;
             if (script == null)
             {
@@ -273,30 +273,30 @@ namespace LuaPlugin
             }
 
             object[] result = null;
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return null;
                 try
                 {
-                    update?.Invoke(lua, 0);
+                    update?.Invoke(Lua, 0);
                     using (LuaFunction executeFunction = Get("execute") as LuaFunction)
                     {
                         if (!trusted && executeFunction != null)
                             result = CallFunction(executeFunction, update, "Execute", script, arg);
                         else
                         {
-                            result = lua.DoString(script);
+                            result = Lua.DoString(script);
                             if (result == null)
                                 result = new object[0];
                         }
                     }
-                    update?.Invoke(lua, 1);
+                    update?.Invoke(Lua, 1);
                 }
                 catch (Exception e)
                 {
-                    update?.Invoke(lua, 2);
+                    update?.Invoke(Lua, 2);
                     HandleException(e, $"Execute: " + exceptionMessage);
                 }
             }
@@ -305,7 +305,7 @@ namespace LuaPlugin
 
         public object[] CallFunction(LuaFunction f, Action<Lua, int> update = null, string exceptionMessage = "", object arg0 = null, object arg1 = null)
         {
-            if (!enabled)
+            if (!Enabled)
                 return null;
             if (f == null)
             {
@@ -314,22 +314,22 @@ namespace LuaPlugin
             }
 
             object[] result = null;
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return null;
                 try
                 {
-                    update?.Invoke(lua, 0);
+                    update?.Invoke(Lua, 0);
                     result = f.Call(arg0, arg1);
                     if (result == null)
                         result = new object[0];
-                    update?.Invoke(lua, 1);
+                    update?.Invoke(Lua, 1);
                 }
                 catch (Exception e)
                 {
-                    update?.Invoke(lua, 2);
+                    update?.Invoke(Lua, 2);
                     HandleException(e, $"CallFunction (no name): " + exceptionMessage);
                 }
             }
@@ -339,10 +339,10 @@ namespace LuaPlugin
         public object[] CallFunction(string name, Action<Lua, int> update = null, string exceptionMessage = "", object arg0 = null, object arg1 = null)
         {
             object[] result = null;
-            if (!enabled)
+            if (!Enabled)
                 return result;
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return result;
@@ -366,12 +366,12 @@ namespace LuaPlugin
         {
             try
             {
-                Lua oldLua = lua;
-                lock (locker)
+                Lua oldLua = Lua;
+                lock (Locker)
                 {
                     if (oldLua.UseTraceback)
                         return "_GetDebugTracebackException_";
-                    return lua.GetDebugTraceback();
+                    return Lua.GetDebugTraceback();
                 }
             } catch
             {
@@ -381,14 +381,14 @@ namespace LuaPlugin
 
         public string ActiveHooks()
         {
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return "LUA INSTANCE IS ALREADY DISPOSED!";
                 string result = "Active hook list:";
                 foreach (string name in LuaHookHandler.HandlerNames)
-                    if (handlers[name].active)
+                    if (Handlers[name].Active)
                         result += "\n\t" + name;
                 return result;
             }
@@ -396,38 +396,38 @@ namespace LuaPlugin
 
         public void UpdateHooks()
         {
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return;
                 foreach (string name in LuaHookHandler.HandlerNames) // TODO: Lazy hook handler creation
-                    handlers[name].Update();
+                    Handlers[name].Update();
             }
         }
 
         public void UpdateHook(string name)
         {
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return;
-                handlers[name].Update();
+                Handlers[name].Update();
             }
         }
 
         public void HookAll()
         {
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return;
-                foreach (var pair in handlers)
-                    if (!pair.Value.active && pair.Key != "OnSendBytes" && pair.Key != "OnSendData") // TODO: check pair.Key for validance
+                foreach (var pair in Handlers)
+                    if (!pair.Value.Active && pair.Key != "OnSendBytes" && pair.Key != "OnSendData") // TODO: check pair.Key for validance
                     {
-                        lua.DoString("function " + pair.Key + "() print('" + pair.Key + "') end");
+                        Lua.DoString("function " + pair.Key + "() print('" + pair.Key + "') end");
                         pair.Value.Hook();
                     }
             }
@@ -435,26 +435,26 @@ namespace LuaPlugin
 
         public void Unhook(string name)
         {
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return;
-                if (handlers[name].active)
-                    handlers[name].Unhook();
+                if (Handlers[name].Active)
+                    Handlers[name].Unhook();
                 SetNull(name, $"Unhook ({name})");
             }
         }
 
         public void UnhookAll()
         {
-            Lua oldLua = lua;
-            lock (locker)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
                 if (oldLua.UseTraceback)
                     return;
-                foreach (var pair in handlers)
-                    if (pair.Value.active)
+                foreach (var pair in Handlers)
+                    if (pair.Value.Active)
                     {
                         pair.Value.Unhook();
                         SetNull(pair.Key, "UnhookAll");
@@ -465,20 +465,20 @@ namespace LuaPlugin
         // DOES NOT ABORT INFINITE LOOPS
         public void LuaTaskDelay(int milliseconds, LuaFunction f)
         {
-            Lua oldLua = lua;
-            object tmp = data["source"];
+            Lua oldLua = Lua;
+            object tmp = Data["source"];
             Task.Delay(milliseconds).ContinueWith(_ =>
             {
-                lock (locker)
+                lock (Locker)
                 {
                     if (!oldLua.UseTraceback) // IF LUASTATE ISN'T MARKED AS DISPOSED
                     {
-                        object oldSource = data["source"];
+                        object oldSource = Data["source"];
                         CallFunction(f, (lua, state) => {
                             if (state == 0)
-                                data["source"] = tmp;
+                                Data["source"] = tmp;
                             else if (state > 0)
-                                data["source"] = oldSource;
+                                Data["source"] = oldSource;
                         }, "LuaTaskDelay");
                         f.Dispose(); // BUG: Can cause AccessViolationException (read notes)
                     }
@@ -490,10 +490,10 @@ namespace LuaPlugin
         {
             Task.Delay(1).ContinueWith(_ =>
             {
-                if (Initialize(LuaPlugin.me, true))
-                    LuaPlugin.me.SendSuccessMessage($"Lua[{index}] has been reset.");
+                if (Initialize(LuaPlugin.Me, true))
+                    LuaPlugin.Me.SendSuccessMessage($"Lua[{Index}] has been reset.");
                 else
-                    LuaPlugin.me.SendErrorMessage($"Lua[{index}] reset failed.");
+                    LuaPlugin.Me.SendErrorMessage($"Lua[{Index}] reset failed.");
             });
         }
 
@@ -513,15 +513,15 @@ namespace LuaPlugin
                 result = result + text.Substring(matchEndIndex, match.Index - matchEndIndex);
                 matchEndIndex = match.Index + match.Value.Length;
                 string script = match.Value.Substring(2, match.Value.Length - 4);
-                object oldSource = data["source"];
+                object oldSource = Data["source"];
                 object[] executionResult = Execute("return " + script, (_lua, state) => {
                     if (state == 0)
                     {
-                        LuaPlugin.me = player;
-                        data["source"] = player;
+                        LuaPlugin.Me = player;
+                        Data["source"] = player;
                     }
                     else if (state > 0)
-                        data["source"] = oldSource;
+                        Data["source"] = oldSource;
                 }, "ProcessText", false, true);
                 if (executionResult != null && executionResult.Length > 0)
                     for (int i = 0; i < executionResult.Length; i++)
@@ -538,13 +538,13 @@ namespace LuaPlugin
         // WARNING: This function is not safe. It can cause AccessViolationException that can't be handled by try or UnhandledException handler. Use at your own risk.
         public void ForceStop()
         {
-            if (forceStopped)
+            if (ForceStopped)
                 return;
-            forceStopped = true;
+            ForceStopped = true;
             //PrintError("Setting ForceStop hook");
             try
             {
-                lua.DoString("debug.sethook(function() error('Forced script stop.') end, '', 7)"); // TODO: Maybe resetting debug hook required here
+                Lua.DoString("debug.sethook(function() error('Forced script stop.') end, '', 7)"); // TODO: Maybe resetting debug hook required here
             } catch (Exception e)
             {
                 HandleException(e, "ForceStop");
@@ -553,14 +553,14 @@ namespace LuaPlugin
 
         public void ForceResume()
         {
-            forceStopped = false;
+            ForceStopped = false;
             bool unhooked = false;
             int attempt = 1;
-            lock (locker)
+            lock (Locker)
                 while (!unhooked)
                     try
                     {
-                        lua.DoString("debug.sethook()");
+                        Lua.DoString("debug.sethook()");
                         unhooked = true;
                         PrintError("UNHOOKED WITH ATTEMPT NUMBER: " + attempt);
                     }
@@ -650,7 +650,7 @@ namespace LuaPlugin
             List<TSPlayer> result = new List<TSPlayer>();
 
             foreach (TSPlayer p in TShock.Players)
-                if (p != null && p.Active && (permission == null || p.HasPermission(permission)) && (luaEnvIndex == -1 || p.LuaEnv().index == luaEnvIndex) && p != except)
+                if (p != null && p.Active && (permission == null || p.HasPermission(permission)) && (luaEnvIndex == -1 || p.LuaEnv().Index == luaEnvIndex) && p != except)
                     result.Add(p);
 
             return result;
@@ -659,31 +659,31 @@ namespace LuaPlugin
         public LuaFunction GenerateFunction(string code, string[] names = null)
         {
             code = $"return function({(names != null ? string.Join(",", names) : "")})" + code + ";end";
-            object oldSource = data["source"];
+            object oldSource = Data["source"];
             object[] executionResult = Execute(code, null, "GenerateFunction", false, true);
             return executionResult?[0] as LuaFunction;
         }
 
         public void HandleException(Exception e, string exceptionMessage = "")
         {
-            lastException = e;
-            lastExceptionLuaIndex = index;
+            LastException = e;
+            LastExceptionLuaIndex = Index;
             PrintError($"{exceptionMessage}\n{e}");//\n{GetDebugTraceback()}");
         }
 
         public void PrintError(string errorMessage)
         {
-            if (printErrorStarted)
+            if (PrintErrorStarted)
             {
                 if (TShock.Log != null)
-                    TShock.Log.ConsoleError($"Lua[{index}]: PrintError already started (ALTHOUGH: {errorMessage})");
+                    TShock.Log.ConsoleError($"Lua[{Index}]: PrintError already started (ALTHOUGH: {errorMessage})");
                 else
-                    Console.Error.WriteLine($"Lua[{index}]: PrintError already started (ALTHOUGH: {errorMessage})");
+                    Console.Error.WriteLine($"Lua[{Index}]: PrintError already started (ALTHOUGH: {errorMessage})");
                 return;
             }
-            printErrorStarted = true;
+            PrintErrorStarted = true;
 
-            errorMessage = $"Lua[{index}]: " + errorMessage;
+            errorMessage = $"Lua[{Index}]: " + errorMessage;
             if (CallFunction("perror", null, "PrintError", errorMessage) == null)
             {
                 if (TShock.Log != null)
@@ -692,21 +692,19 @@ namespace LuaPlugin
                     Console.Error.WriteLine(errorMessage);
             }
 
-            printErrorStarted = false;
+            PrintErrorStarted = false;
         }
 
         public void ShowLastException()
         {
-            if (LuaEnvironment.lastExceptionLuaIndex >= 0)
+            if (LuaEnvironment.LastExceptionLuaIndex >= 0)
             {
-                Exception e = lastException;
+                Exception e = LastException;
                 PrintError($"\n> Message: {e.Message}\n> Data: {e.Data}\n> InnerException: {e.InnerException}\n" +
                     $"> StackTrace: {e.StackTrace}\n> Source: {e.Source}");
             }
             else
-            {
                 PrintError("No last exception found!");
-            }
         }
     }
 }

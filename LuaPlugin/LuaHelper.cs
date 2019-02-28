@@ -14,7 +14,7 @@ namespace LuaPlugin
 {
     public class LuaHelper
     {
-        public static string statusEnding = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+        public static string StatusEnding = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         public static long GetRAMUsage()
         {
@@ -46,7 +46,7 @@ namespace LuaPlugin
 
         public static void PlayersStatus(TSPlayer player, string text)
         {
-            player.SendData(PacketTypes.Status, text + statusEnding);
+            player.SendData(PacketTypes.Status, text + StatusEnding);
         }
 
         public static string SharpShow(object o)

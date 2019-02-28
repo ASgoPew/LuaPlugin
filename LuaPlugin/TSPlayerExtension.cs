@@ -7,7 +7,7 @@ namespace LuaPlugin
     {
         public static LuaEnvironment LuaEnv(this TSPlayer player)
         {
-            return LuaPlugin.luas[player.HasPermission("lua.control") ? LuaPlugin.luaEnvIndex[player.Index >= 0 ? player.Index : Main.maxPlayers] : LuaPlugin.untrustedLuaIndex];
+            return LuaPlugin.Luas[player.HasPermission("lua.control") ? LuaPlugin.LuaEnvIndex[player.Index >= 0 ? player.Index : Main.maxPlayers] : Config.untrusted_lua_index];
         }
     }
 }
