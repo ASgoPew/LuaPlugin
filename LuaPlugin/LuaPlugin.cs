@@ -14,7 +14,7 @@ using TShockAPI.Hooks;
 using System.ComponentModel;
 using System.Diagnostics;
 
-namespace LuaPlugin
+namespace MyLua
 {
     [ApiVersion(2, 1)]
     public class LuaPlugin : TerrariaPlugin
@@ -42,8 +42,8 @@ namespace LuaPlugin
 
             Config.Load();
 
-            if (Config.path != null && !Directory.Exists(Path.Combine(Config.path, Config.key)))
-                Directory.CreateDirectory(Path.Combine(Config.path, Config.key));
+            if (Config.Path != null && !Directory.Exists(Path.Combine(Config.Path, Config.Key)))
+                Directory.CreateDirectory(Path.Combine(Config.Path, Config.Key));
 
             if (!ReadLuaEnvironments())
             {
@@ -176,11 +176,11 @@ namespace LuaPlugin
 
         public bool ReadLuaEnvironments()
         {
-            if (!Directory.Exists(Path.Combine(Path.Combine(Config.path, Config.key), "0")))
+            if (!Directory.Exists(Path.Combine(Path.Combine(Config.Path, Config.Key), "0")))
             {
                 // Here generating initial lua scripts directory structure
                 // TODO
-                string path = Path.Combine(Config.path, Config.key);
+                string path = Path.Combine(Config.Path, Config.Key);
                 Directory.CreateDirectory(Path.Combine(path, "0"));
                 File.WriteAllText(Path.Combine(path, "init.lua"),
 @"import ('mscorlib', 'System')
@@ -191,7 +191,7 @@ function print(o)
     Console.WriteLine(tostring(o))
 end");
             }
-            List<string> folders = Directory.GetDirectories(Path.Combine(Config.path, Config.key)).ToList();
+            List<string> folders = Directory.GetDirectories(Path.Combine(Config.Path, Config.Key)).ToList();
             folders.Sort(delegate (string folder1, string folder2)
             {
                 int index1, index2;
@@ -220,7 +220,7 @@ end");
         public void OnServerChat(ServerChatEventArgs args)
         {
             TSPlayer player = TShock.Players[args.Who];
-            if (!player.HasPermission(Config.execute_permission))
+            if (!player.HasPermission(Config.ExecutePermission))
                 return;
             args.Handled = args.Handled || CheckLuaInput(player, args.Text);
         }
@@ -258,9 +258,9 @@ end");
                 RunLua(player, "print(SharpShow(" + text.Substring(SharpShowCommandSpecifier.Length) + "))");
                 return true;
             }
-            else if (text.StartsWith(Config.command_specifier) && text.Length > Config.command_specifier.Length)
+            else if (text.StartsWith(Config.CommandSpecifier) && text.Length > Config.CommandSpecifier.Length)
             {
-                RunLua(player, text.Substring(Config.command_specifier.Length));
+                RunLua(player, text.Substring(Config.CommandSpecifier.Length));
                 return true;
             }
             return false;

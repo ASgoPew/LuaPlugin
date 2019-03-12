@@ -11,7 +11,7 @@ using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.Hooks;
 
-namespace LuaPlugin
+namespace MyLua
 {
     public class LuaHookHandler
     {

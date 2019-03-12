@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TShockAPI;
 
-namespace LuaPlugin
+namespace MyLua
 {
     public class LuaCommand
     {
