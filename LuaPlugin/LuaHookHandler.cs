@@ -74,9 +74,10 @@ namespace MyLua
         public void a()
         {
             h.SetHook(() => h.Invoke());
-            h2.SetHook(new HookHandler<EventArgs>((args) => h2.Invoke(args)));
-            h3.SetHook(new AccountHooks.AccountCreateD((AccountCreateEventArgs args) => h3.Invoke(args)));
-            h4.SetHook(new EventHandler<GetDataHandlers.NewProjectileEventArgs>((object sender, GetDataHandlers.NewProjectileEventArgs args) => h4.Invoke(args)));
+            h2.SetHook(new HookHandler<EventArgs>(args => h2.Invoke(args)));
+            h3.SetHook(new AccountHooks.AccountCreateD(args => h3.Invoke(args)));
+            h4.SetHook(new EventHandler<GetDataHandlers.NewProjectileEventArgs>((sender, args) => h4.Invoke(args)));
+            typeof(AccountHooks.AccountCreateD).GetConstructors()[0].Invoke(new object[] {  });
         }
 
         //public delegate void HookHandler();
