@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Terraria;
@@ -13,8 +14,71 @@ using TShockAPI.Hooks;
 
 namespace MyLua
 {
+    public class MyLuaHookHandler<T>
+    {
+        LuaEnvironment LuaEnv { get; set; }
+        public string Name { get; set; }
+        Action<bool, T> Control { get; set; }
+        T Hook { get; set; }
+
+        public static MyLuaHookHandler<T> Create(LuaEnvironment luaEnv, string name, Action<bool, T> control)
+        {
+            return null;
+        }
+
+        public MyLuaHookHandler(LuaEnvironment luaEnv, string name, Action<bool, T> control)
+        {
+            LuaEnv = luaEnv;
+            Name = name;
+            Control = control;
+        }
+
+        public void Invoke(params object[] args)
+        {
+        }
+
+        public void SetHook(T hook)
+        {
+            System.Reflection.ConstructorInfo c = typeof(T).GetConstructors()[0];
+            c.GetParameters();
+            object hook2 = new Action(() => { }); // Creating Action with required parameters
+            // We can generate Action on IL level
+            c.Invoke(new object[] { hook2 });
+            Hook = hook;
+        }
+
+        public void Enable() => Control.Invoke(true, Hook);
+        public void Disable() => Control.Invoke(false, Hook);
+    }
+
     public class LuaHookHandler
     {
+        MyLuaHookHandler<Action> h = new MyLuaHookHandler<Action>(null, "OnTick", (on, h) =>
+        {
+            if (on) Main.OnTick += h; else Main.OnTick -= h;
+        });
+        MyLuaHookHandler<HookHandler<EventArgs>> h2 = new MyLuaHookHandler<HookHandler<EventArgs>>(null, "OnTick", (on, h) =>
+        {
+            if (on) ServerApi.Hooks.GameInitialize.Register(null, h);
+            else ServerApi.Hooks.GameInitialize.Deregister(null, h);
+        });
+        MyLuaHookHandler<AccountHooks.AccountCreateD> h3 = new MyLuaHookHandler<AccountHooks.AccountCreateD>(null, "OnTick", (on, h) =>
+        {
+
+        });
+        MyLuaHookHandler<EventHandler<GetDataHandlers.NewProjectileEventArgs>> h4 = new MyLuaHookHandler<EventHandler<GetDataHandlers.NewProjectileEventArgs>>(null, "asd", (on, h) =>
+        {
+
+        });
+
+        public void a()
+        {
+            h.SetHook(() => h.Invoke());
+            h2.SetHook(new HookHandler<EventArgs>((args) => h2.Invoke(args)));
+            h3.SetHook(new AccountHooks.AccountCreateD((AccountCreateEventArgs args) => h3.Invoke(args)));
+            h4.SetHook(new EventHandler<GetDataHandlers.NewProjectileEventArgs>((object sender, GetDataHandlers.NewProjectileEventArgs args) => h4.Invoke(args)));
+        }
+
         //public delegate void HookHandler();
         //public delegate void HookHandler<T>(T args);
         //public delegate void HookHandler<T, U>(T sender, U args);

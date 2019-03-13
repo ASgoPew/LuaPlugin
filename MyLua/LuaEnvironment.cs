@@ -1,60 +1,85 @@
-﻿using Microsoft.Xna.Framework;
-using NLua;
-using NLua.Event;
+﻿using NLua;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-//using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
-using Terraria.Localization;
-using TerrariaApi.Server;
-using TShockAPI;
 
 namespace MyLua
 {
+    public static class NLuaExtensions
+    {
+        public static void Enable(this Lua lua)  => lua.UseTraceback = true;
+        public static void Disable(this Lua lua) => lua.UseTraceback = false;
+        public static bool Enabled(this Lua lua) => lua.UseTraceback;
+    }
+
     public class LuaEnvironment : IDisposable
     {
-        public static int LastExceptionLuaIndex = -1;
+        #region Data
 
-        public int Index;
-        private Lua Lua = null;
+        private Lua Lua;
+        private string[] Directories;
         private Dictionary<string, ILuaHookHandler> Handlers = new Dictionary<string, ILuaHookHandler>();
-        public string LuaDirectory = null;
         public Exception LastException = null;
         public List<ILuaCommand> LuaCommands = new List<ILuaCommand>();
         private object Locker = new object();
         public Dictionary<string, object> Data = new Dictionary<string, object>();
-        public bool Enabled = false;
-        public bool ForceStopped = false;
-        public bool PrintErrorStarted = false;
 
-        public LuaEnvironment(int index, string directory = null)
+        #endregion
+
+        #region Initialize
+
+        public LuaEnvironment(string[] directories)
         {
-            this.Index = index;
-            this.LuaDirectory = directory;
-            //foreach (string name in LuaHookHandler.HandlerNames) // TODO: Add handlers only on hook registration?
-                //Handlers.Add(name, new LuaHookHandler(this, name));
+            Directories = directories;
         }
+
+        public bool Initialize()
+        {
+            lock (Locker)
+            {
+                if (Lua != null)
+                {
+                    UnhookAll(); // Here enabled is already true since lua != null
+                    Dispose();
+                }
+            }
+
+            Lua = new Lua() { UseTraceback = true };
+            Lua.State.Encoding = Encoding.UTF8;
+            Lua.LoadCLRPackage();
+            Lua["env"] = this;
+
+            if (!ReadEnvironment())
+                return false;
+
+            CallFunctionByName("OnLuaInit"); // There might not be such function.
+            UpdateHooks();
+
+            return true;
+        }
+
+        #endregion
+        #region Dispose
 
         public void Dispose()
         {
             lock (Locker)
             {
-                if (Lua.UseTraceback)
+                if (!Lua.Enabled())
                     return;
-                CallFunction("OnLuaClose", null, "Dispose");
+                CallFunctionByName("OnLuaClose"); // There might not be such function.
                 ClearCommands();
                 Lua.Dispose();
                 Lua.UseTraceback = true; // TODO: Change (THIS SHIT IS FOR MARKING LUASTATE AS DISPOSED)
-                //lua = null;
             }
         }
+
+        #endregion
+        #region ClearCommands
 
         public void ClearCommands()
         {
@@ -63,61 +88,15 @@ namespace MyLua
             LuaCommands.Clear();
         }
 
-        public Lua GetState()
+        #endregion
+        #region ReadEnvironment
+
+        public bool ReadEnvironment()
         {
-            return Lua;
-        }
+            List<string> scripts = new List<string>();
+            foreach (string dir in Directories)
+                scripts.AddRange(Directory.EnumerateFiles(dir, "*.lua", SearchOption.AllDirectories));
 
-        public bool Initialize(bool luaInit = false)
-        {
-            try
-            {
-                lock (Locker)
-                {
-                    if (Lua != null)
-                    {
-                        UnhookAll(); // Here enabled is already true since lua != null
-                        Dispose();
-                    }
-                    Lua = new Lua();
-                    Lua.State.Encoding = Encoding.UTF8;
-                    Lua.LoadCLRPackage();
-
-                    Data["source"] = this;
-
-                    Lua["env"] = this;
-
-                    //Lua.RegisterFunction("NetworkText", typeof(NetworkText).GetMethod("FromLiteral")).Dispose();
-                }
-            } catch (Exception e)
-            {
-                HandleException(e, "Initialize");
-                return false;
-            }
-            Enabled = true;
-
-            if (!ReadLuaEnvironment())
-                return false;
-
-            if (luaInit)
-                LuaInit();
-
-            UpdateHooks();
-
-            return true;
-        }
-
-        public void LuaInit()
-        {
-            CallFunction("OnLuaInit", null, "LuaInit"); // There might not be such function. It's not an error.
-            UpdateHooks();
-        }
-
-        public bool ReadLuaEnvironment(string path, string key)
-        {
-            List<string> scripts = Directory.EnumerateFiles(Path.Combine(path, key), "*.lua", SearchOption.TopDirectoryOnly).ToList();
-            if (LuaDirectory != null)
-                scripts = scripts.Concat(Directory.EnumerateFiles(LuaDirectory, "*.lua", SearchOption.AllDirectories).ToList()).ToList();
             scripts.Sort(delegate (string script1, string script2)
             {
                 if (String.Compare(Path.GetFileNameWithoutExtension(script1), Path.GetFileNameWithoutExtension(script2)) < 0)
@@ -126,432 +105,221 @@ namespace MyLua
                     return 1;
                 return 0;
             });
-            Console.WriteLine("Reading environment: " + Index);
+
             foreach (string script in scripts)
             {
                 string filename = script.Replace(@"\", @"/");
                 Console.WriteLine("\t" + filename);
-                if (Execute($"dofile('{filename}', '{filename}')", null, $"ReadLuaEnvironment", true) == null)
+                if (RunScript($"dofile('{filename}', '{filename}')", null, $"ReadLuaEnvironment", true) == null)
                     return false;
             }
             return true;
         }
 
-        public object Get(string name, string exceptionMessage = "")
+        #endregion
+        #region Get
+
+        public object Get(string name)
         {
-            if (!Enabled)
-                return null;
-            try
+            Lua oldLua = Lua;
+            lock (Locker)
             {
-                Lua oldLua = Lua;
-                lock (Locker)
-                {
-                    if (oldLua.UseTraceback)
-                        return false;
-                    return Lua[name];
-                }
-            } catch
-            {
-                HandleException(new Exception("Cannot Get " + name + " member"), "Get: " + exceptionMessage);
-                return null;
+                if (!oldLua.Enabled())
+                    return null;
+                return Lua[name];
             }
         }
 
-        public void Set(string name, object o, string exceptionMessage = "")
+        #endregion
+        #region Set
+
+        public void Set(string name, object o = null)
         {
-            if (!Enabled)
-                return;
-            if (o == null)
+            Lua oldLua = Lua;
+            lock (Locker)
             {
-                PrintError("LuaEnvironment.Set: o is null! " + exceptionMessage);
-                throw new Exception("meh");
-            }
-            try
-            {
-                Lua oldLua = Lua;
-                lock (Locker)
-                {
-                    if (oldLua.UseTraceback)
-                        return;
-                    Lua[name] = o;
-                }
-            }
-            catch
-            {
-                HandleException(new Exception("Cannot Set " + name + " member"), "Set: " + exceptionMessage);
-                return;
+                if (!oldLua.Enabled())
+                    return;
+                Lua[name] = o;
             }
         }
 
-        public void SetNull(string name, string exceptionMessage = "")
-        {
-            if (!Enabled)
-                return;
-            try
-            {
-                Lua oldLua = Lua;
-                lock (Locker)
-                {
-                    if (oldLua.UseTraceback)
-                        return;
-                    Lua[name] = null;
-                }
-            }
-            catch
-            {
-                HandleException(new Exception("Cannot SetNull " + name + " member"), "Set: " + exceptionMessage);
-                return;
-            }
-        }
+        #endregion
+        #region GenerateDotNETException
 
-        public void GenerateException()
+        public void GenerateDotNETException()
         {
             throw new Exception("Template lua exception");
         }
 
-        public object[] Execute(string script, Action<Lua, int> update, string exceptionMessage, bool trusted = false, object arg = null)
-        {
-            if (!Enabled)
-                return null;
-            if (script == null)
-            {
-                PrintError("Execute: first argument (script) is null");
-                return null;
-            }
+        #endregion
+        #region RunScript
 
+        public object[] RunScript(string script, params object[] args)
+        {
+            
             object[] result = null;
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (oldLua.UseTraceback)
+                if (!oldLua.Enabled())
                     return null;
-                try
+                using (LuaFunction executeFunction = Get("execute") as LuaFunction)
                 {
-                    update?.Invoke(Lua, 0);
-                    using (LuaFunction executeFunction = Get("execute") as LuaFunction)
+                    if (executeFunction != null)
+                        result = CallFunction(executeFunction, script, args);
+                    else
                     {
-                        if (!trusted && executeFunction != null)
-                            result = CallFunction(executeFunction, update, "Execute", script, arg);
-                        else
-                        {
-                            result = Lua.DoString(script);
-                            if (result == null)
-                                result = new object[0];
-                        }
+                        result = Lua.DoString(script);
+                        if (result == null)
+                            result = new object[0];
                     }
-                    update?.Invoke(Lua, 1);
-                }
-                catch (Exception e)
-                {
-                    update?.Invoke(Lua, 2);
-                    HandleException(e, $"Execute: " + exceptionMessage);
                 }
             }
             return result;
         }
 
-        public object[] CallFunction(LuaFunction f, Action<Lua, int> update = null, string exceptionMessage = "", object arg0 = null, object arg1 = null)
-        {
-            if (!Enabled)
-                return null;
-            if (f == null)
-            {
-                PrintError("CallFunction: first argument (LuaFunction f) is null");
-                return null;
-            }
+        #endregion
+        #region CallFunction
 
-            object[] result = null;
+        public object[] CallFunction(LuaFunction f, params object[] args)
+        {
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (oldLua.UseTraceback)
+                if (!oldLua.Enabled())
                     return null;
-                try
-                {
-                    update?.Invoke(Lua, 0);
-                    result = f.Call(arg0, arg1);
-                    if (result == null)
-                        result = new object[0];
-                    update?.Invoke(Lua, 1);
-                }
-                catch (Exception e)
-                {
-                    update?.Invoke(Lua, 2);
-                    HandleException(e, $"CallFunction (no name): " + exceptionMessage + "\n" + e.InnerException);
-                }
+                return f.Call(args) ?? new object[0];
             }
-            return result;
         }
 
-        public object[] CallFunction(string name, Action<Lua, int> update = null, string exceptionMessage = "", object arg0 = null, object arg1 = null)
+        #endregion
+        #region CallFunctionByName
+
+        public object[] CallFunctionByName(string name, params object[] args)
         {
-            object[] result = null;
-            if (!Enabled)
-                return result;
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (oldLua.UseTraceback)
-                    return result;
+                if (!oldLua.Enabled())
+                    return null;
                 using (LuaFunction f = Get(name) as LuaFunction)
                 {
                     if (f != null)
-                        return CallFunction(f, update, exceptionMessage, arg0, arg1);
+                        return f.Call(args) ?? new object[0];
                     else
-                        return result;
+                        return null;
                 }
             }
         }
 
-        public string ActiveHooks()
-        {
-            Lua oldLua = Lua;
-            lock (Locker)
-            {
-                if (oldLua.UseTraceback)
-                    return "LUA INSTANCE IS ALREADY DISPOSED!";
-                string result = "Active hook list:";
-                foreach (ILuaHookHandler handler in Handlers.Values)
-                    if (handler.Active)
-                        result += "\n\t" + handler.Name;
-                return result;
-            }
-        }
+        #endregion
+        #region UpdateHooks
 
         public void UpdateHooks()
         {
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (oldLua.UseTraceback)
+                if (!oldLua.Enabled())
                     return;
                 foreach (ILuaHookHandler handler in Handlers.Values) // TODO: Lazy hook handler creation
                     handler.Update();
             }
         }
 
+        #endregion
+        #region UpdateHook
+
         public void UpdateHook(string name)
         {
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (oldLua.UseTraceback)
+                if (!oldLua.Enabled())
                     return;
                 Handlers[name].Update();
             }
         }
 
-        public void HookAll()
-        {
-            Lua oldLua = Lua;
-            lock (Locker)
-            {
-                if (oldLua.UseTraceback)
-                    return;
-                foreach (var pair in Handlers)
-                    if (!pair.Value.Active && pair.Key != "OnSendBytes" && pair.Key != "OnSendData") // TODO: check pair.Key for validance
-                    {
-                        Lua.DoString("function " + pair.Key + "() print('" + pair.Key + "') end");
-                        pair.Value.Hook();
-                    }
-            }
-        }
+        #endregion
+        #region Unhook
 
         public void Unhook(string name)
         {
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (oldLua.UseTraceback)
+                if (!oldLua.Enabled())
                     return;
                 if (Handlers[name].Active)
                     Handlers[name].Unhook();
-                SetNull(name, $"Unhook ({name})");
+                Lua[name] = null;
             }
         }
+
+        #endregion
+        #region UnhookAll
 
         public void UnhookAll()
         {
-            Lua oldLua = Lua;
-            lock (Locker)
-            {
-                if (oldLua.UseTraceback)
-                    return;
-                foreach (var pair in Handlers)
-                    if (pair.Value.Active)
-                    {
-                        pair.Value.Unhook();
-                        SetNull(pair.Key, "UnhookAll");
-                    }
-            }
+            foreach (var pair in Handlers)
+                if (pair.Value.Active)
+                    pair.Value.Unhook();
         }
 
+        #endregion
+        #region LuaDelay
+
         // DOES NOT ABORT INFINITE LOOPS
-        public void LuaTaskDelay(int milliseconds, LuaFunction f)
+        public void LuaDelay(int milliseconds, LuaFunction f, params object[] args)
         {
             Lua oldLua = Lua;
-            object tmp = Data["source"];
             Task.Delay(milliseconds).ContinueWith(_ =>
             {
                 lock (Locker)
                 {
-                    if (!oldLua.UseTraceback) // IF LUASTATE ISN'T MARKED AS DISPOSED
-                    {
-                        object oldSource = Data["source"];
-                        CallFunction(f, (lua, state) => {
-                            if (state == 0)
-                                Data["source"] = tmp;
-                            else if (state > 0)
-                                Data["source"] = oldSource;
-                        }, "LuaTaskDelay");
-                        f.Dispose(); // BUG: Can cause AccessViolationException (read notes)
-                    }
+                    if (!oldLua.Enabled())
+                        return;
+                    CallFunction(f, args);
+                    f.Dispose(); // BUG: Can cause AccessViolationException (read notes)
                 }
             });
         }
 
-        public void LuaReset()
+        #endregion
+        #region ResetFromLua
+
+        public void ResetFromLua()
         {
             // Delay for 1 millisecond to run this code in another thread
-            Task.Delay(1).ContinueWith(_ =>
-            {
-                if (Initialize(true))
-                    LuaPlugin.Me.SendSuccessMessage($"Lua[{Index}] has been reset.");
-                else
-                    LuaPlugin.Me.SendErrorMessage($"Lua[{Index}] reset failed.");
-            });
+            Task.Delay(1).ContinueWith(_ => Initialize());
         }
 
-        public string ProcessText(TSPlayer player, string text)
-        {
-            string pattern = @"{;.*?;}";
-            int matchEndIndex = 0;
-            string result = "";
+        #endregion
+        #region NativeLuaWrite
 
-            foreach (Match match in Regex.Matches(text, pattern))
-            {
-                result = result + text.Substring(matchEndIndex, match.Index - matchEndIndex);
-                matchEndIndex = match.Index + match.Value.Length;
-                string script = match.Value.Substring(2, match.Value.Length - 4);
-                object oldSource = Data["source"];
-                object[] executionResult = Execute("return " + script, (_lua, state) => {
-                    if (state == 0)
-                    {
-                        LuaPlugin.Me = player;
-                        Data["source"] = player;
-                    }
-                    else if (state > 0)
-                        Data["source"] = oldSource;
-                }, "ProcessText", false, true);
-                if (executionResult != null && executionResult.Length > 0)
-                    for (int i = 0; i < executionResult.Length; i++)
-                    {
-                        if (executionResult[i] != null)
-                            result = result + (i > 0 ? ", " : "") + executionResult[i].ToString();
-                        else
-                            result = result + (i > 0 ? ", " : "") + "nil";
-                    }
-            }
-            return result + text.Substring(matchEndIndex, text.Length - matchEndIndex);
-        }
-
-        public void NativeLuaWrite(byte[] buffer, int index, LuaFunction f, object arg0 = null, object arg1 = null)
+        public void NativeLuaWrite(byte[] buffer, int offset, int size, LuaFunction f)
         {
-            if (index < 0 || index >= buffer.Length)
-            {
-                PrintError("LuaWrite exception: Index out of buffer");
-                return;
-            }
-            using (MemoryStream ms = new MemoryStream(buffer, index, buffer.Length - index))
+            using (MemoryStream ms = new MemoryStream(buffer, offset, size))
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
-                f.Call(bw, arg0, arg1);
+                f.Call(ms, bw);
             }
         }
 
-        public void NativeLuaRead(byte[] buffer, int index, LuaFunction f, object arg0 = null, object arg1 = null)
+        #endregion
+        #region NativeLuaRead
+
+        public void NativeLuaRead(byte[] buffer, int offset, int size, LuaFunction f)
         {
-            if (index < 0 || index >= buffer.Length)
-            {
-                PrintError("LuaRead exception: Index out of buffer");
-                return;
-            }
-            using (MemoryStream ms = new MemoryStream(buffer, index, buffer.Length - index))
+            using (MemoryStream ms = new MemoryStream(buffer, offset, size))
             using (BinaryReader br = new BinaryReader(ms))
             {
-                f.Call(br, arg0, arg1);
+                f.Call(ms, br);
             }
         }
 
-        public void LuaWriteSendBytes(SendBytesEventArgs args, PacketTypes type, int index, LuaFunction f)
-        {
-            if ((byte)type == args.Buffer[args.Offset + 2])
-                NativeLuaWrite(args.Buffer, args.Offset + 3 + index, f, args.Count, args.Socket.Id);
-            f.Dispose();
-        }
-
-        public void LuaReadSendBytes(SendBytesEventArgs args, PacketTypes type, int index, LuaFunction f)
-        {
-            if ((byte)type == args.Buffer[args.Offset + 2])
-                NativeLuaRead(args.Buffer, args.Offset + 3 + index, f, args.Count, args.Socket.Id);
-            f.Dispose();
-        }
-
-        public void LuaWriteGetData(GetDataEventArgs args, PacketTypes type, int index, LuaFunction f)
-        {
-            if (args.MsgID == type)
-                NativeLuaWrite(args.Msg.readBuffer, args.Index + index, f, args.Length + 2, args.Msg.whoAmI);
-            f.Dispose();
-        }
-
-        public void LuaReadGetData(GetDataEventArgs args, PacketTypes type, int index, LuaFunction f)
-        {
-            if (args.MsgID == type)
-                NativeLuaRead(args.Msg.readBuffer, args.Index + index, f, args.Length + 2, args.Msg.whoAmI);
-            f.Dispose();
-        }
-
-        public LuaFunction GenerateFunction(string code, string[] names = null)
-        {
-            code = $"return function({(names != null ? string.Join(",", names) : "")})" + code + ";end";
-            object oldSource = Data["source"];
-            object[] executionResult = Execute(code, null, "GenerateFunction", false, true);
-            return executionResult?[0] as LuaFunction;
-        }
-
-        public void HandleException(Exception e, string exceptionMessage = "")
-        {
-            LastException = e;
-            LastExceptionLuaIndex = Index;
-            PrintError($"{exceptionMessage}\n{e}");//\n{GetDebugTraceback()}");
-        }
-
-        public void PrintError(string errorMessage)
-        {
-            if (PrintErrorStarted)
-            {
-                Console.Error.WriteLine($"Lua[{Index}]: PrintError already started (ALTHOUGH: {errorMessage})");
-                return;
-            }
-            PrintErrorStarted = true;
-
-            errorMessage = $"Lua[{Index}]: " + errorMessage;
-            if (CallFunction("perror", null, "PrintError", errorMessage) == null)
-                Console.Error.WriteLine(errorMessage);
-
-            PrintErrorStarted = false;
-        }
-
-        public void ShowLastException()
-        {
-            if (LuaEnvironment.LastExceptionLuaIndex >= 0)
-            {
-                Exception e = LastException;
-                PrintError($"\n> Message: {e.Message}\n> Data: {e.Data}\n> InnerException: {e.InnerException}\n" +
-                    $"> StackTrace: {e.StackTrace}\n> Source: {e.Source}");
-            }
-            else
-                PrintError("No last exception found!");
-        }
+        #endregion
     }
 }
