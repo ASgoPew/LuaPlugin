@@ -10,18 +10,18 @@ namespace MyLua
 {
     public class Config
     {
-        [JsonProperty("path")]
-        public static string Path = "lua";
-        [JsonProperty("key")]
-        public static string Key = "server1";
         [JsonProperty("command_specifier")]
         public static string CommandSpecifier = ";";
         [JsonProperty("control_permission")]
         public static string ControlPermission = "lua.control";
         [JsonProperty("execute_permission")]
         public static string ExecutePermission = "lua.execute";
-        [JsonProperty("untrusted_lua_index")]
-        public static int UntrustedLuaIndex = 0;
+        [JsonProperty("default_lua")]
+        public static string DefaultLua;
+        [JsonProperty("untrusted_lua")]
+        public static string UntrustedLua;
+        [JsonProperty("environments")]
+        public static Dictionary<string, LuaEnvironment> Environments;
 
         #region Write
 
@@ -41,9 +41,21 @@ namespace MyLua
                 JsonConvert.DeserializeObject<Config>(File.ReadAllText(path));
             else
                 Save();
+
+            Update();
         }
 
         #endregion
+        #region Update
 
+        public static void Update()
+        {
+            //if (DefaultLua != null && Environments.Count > 0 && !Environments.ContainsKey(DefaultLua))
+
+            foreach (var pair in Environments)
+                pair.Value.Name = pair.Key;
+        }
+
+        #endregion
     }
 }

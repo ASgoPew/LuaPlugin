@@ -164,13 +164,13 @@ namespace MyLua
         {
             //Console.WriteLine("Hooking " + name);
             Active = true;
-            Control(true);
+            //Control(true);
         }
 
         public void Unhook()
         {
             //Console.WriteLine("Unhooking " + name);
-            Control(false);
+            //Control(false);
             Active = false;
         }
 
@@ -218,7 +218,7 @@ namespace MyLua
             break;
         */
 
-        public void Control(bool on)
+        /*public void Control(bool on)
         {
             switch (Name)
             {
@@ -509,25 +509,25 @@ namespace MyLua
                     break;
 
                 // TODO???: OTAPI.Hooks
-                /*case "OnProjectilePreKill":
-                    handler = new OTAPI.Modifications.NetworkText.AfterChatMessageHandler((text, color, ignore) => { return OnHookWithResult(); });
-                    handlerControl = (Action<bool>)((on) => { if (on) OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage += handler; else OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage -= handler; });
-                    OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage += new Action(() => { });
-                    break;
-                case "OnProjectilePreKill":
-                    handler = new OTAPI.Hooks.Projectile.PreKillHandler((Projectile p) => { return OnHookWithResult(p); });
-                    handlerControl = (Action<bool>)((on) => { if (on) OTAPI.Hooks.Projectile.PreKill += handler; else OTAPI.Hooks.Projectile.PreKill -= handler; });
-                    break;*/
+                //case "OnProjectilePreKill":
+                    //handler = new OTAPI.Modifications.NetworkText.AfterChatMessageHandler((text, color, ignore) => { return OnHookWithResult(); });
+                    //handlerControl = (Action<bool>)((on) => { if (on) OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage += handler; else OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage -= handler; });
+                    //OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage += new Action(() => { });
+                    //break;
+                //case "OnProjectilePreKill":
+                    //handler = new OTAPI.Hooks.Projectile.PreKillHandler((Projectile p) => { return OnHookWithResult(p); });
+                    //handlerControl = (Action<bool>)((on) => { if (on) OTAPI.Hooks.Projectile.PreKill += handler; else OTAPI.Hooks.Projectile.PreKill -= handler; });
+                    //break;
 
-                /*case "OnProjectilePostKill":
-                    if (on) OTAPI.Hooks.Projectile.PostKilled += handler; else OTAPI.Hooks.Projectile.PostKilled -= handler;
-                    break;*/
+                //case "OnProjectilePostKill":
+                    //if (on) OTAPI.Hooks.Projectile.PostKilled += handler; else OTAPI.Hooks.Projectile.PostKilled -= handler;
+                    //break;
 
                 default:
                     LuaEnv.PrintError("Trying to create unknown hook!");
                     break;
             }
-        }
+        }*/
 
         public Action CreateAction()
         {

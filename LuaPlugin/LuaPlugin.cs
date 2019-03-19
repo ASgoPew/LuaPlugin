@@ -13,37 +13,35 @@ using System.Threading.Tasks;
 using TShockAPI.Hooks;
 using System.ComponentModel;
 using System.Diagnostics;
+using MyLua;
 
-namespace MyLua
+namespace LuaPlugin
 {
     [ApiVersion(2, 1)]
     public class LuaPlugin : TerrariaPlugin
     {
+        #region Data
+
         public override string Author => "ASgo";
         public override string Description => "Plugin that provides lua to server development";
         public override string Name => "LuaPlugin";
         public override Version Version => new Version(1, 0, 0, 0);
         
         public static LuaPlugin Instance = null;
-        public static List<LuaEnvironment2> Luas = new List<LuaEnvironment2>();
-        public static int[] LuaEnvIndex = new int[Main.maxPlayers + 1];
-        public static string PrintCommandSpecifier = ";;";
-        public static string ShowCommandSpecifier = ";=";
-        public static string SharpShowCommandSpecifier = ";-";
-        public static string OnTickCommandSpecifier = ";;;";
+        public static string[] LuaEnvIndex = new string[Main.maxPlayers + 1];
         public static TSPlayer Me = null;
         public static bool GameInitialized = false;
         public static Dictionary<string, object> Data = new Dictionary<string, object>();
 
-        #region Construction/destruction
+        #endregion
+
+        #region Initialize
+
         public LuaPlugin(Main game) : base(game)
         {
             Instance = this;
 
             Config.Load();
-
-            if (Config.Path != null && !Directory.Exists(Path.Combine(Config.Path, Config.Key)))
-                Directory.CreateDirectory(Path.Combine(Config.Path, Config.Key));
 
             if (!ReadLuaEnvironments())
             {
@@ -53,7 +51,7 @@ namespace MyLua
             }
 
             for (int i = 0; i < LuaEnvIndex.Length; i++)
-                LuaEnvIndex[i] = 0;
+                LuaEnvIndex[i] = Config.DefaultLua;
         }
 
         public override void Initialize()
@@ -64,7 +62,16 @@ namespace MyLua
             ServerApi.Hooks.ServerCommand.Register(this, OnServerCommand);
             ServerApi.Hooks.ServerLeave.Register(this, OnServerLeave);
             ServerApi.Hooks.ServerConnect.Register(this, OnServerConnect); // DEBUG SHIT
+
+            Commands.ChatCommands.Add(new Command(new List<string> { "lua.contol" }, LuaChatCommand, "lua")
+            {
+                AllowServer = true,
+                HelpText = "Lua control."
+            });
         }
+
+        #endregion
+        #region Dispose
 
         protected override void Dispose(bool disposing)
         {
@@ -76,12 +83,12 @@ namespace MyLua
                 ServerApi.Hooks.ServerCommand.Deregister(this, OnServerCommand);
                 ServerApi.Hooks.ServerLeave.Deregister(this, OnServerLeave);
             }
-            foreach (LuaEnvironment2 l in Luas)
-                l.Dispose();
+            foreach (var pair in Config.Environments)
+                pair.Value.Dispose();
             base.Dispose(disposing);
         }
-        #endregion
 
+        #endregion
         #region Helper data and methods
 
         //public delegate void handler0();
@@ -138,36 +145,8 @@ namespace MyLua
             return (bw) => { f.Call(bw); };
         }*/
         #endregion
-
         #region Hook handlers
-        // DEBUG SHIT
-        public void OnServerConnect(ConnectEventArgs args)
-        {
-            args.Handled = true;
-            Netplay.Clients[args.Who].State = -1;
-        }
-
-        public void OnGameInitialize(EventArgs args)
-        {
-            GameInitialized = true;
-
-            Commands.ChatCommands.Add(new Command(new List<string> { "lua.contol" }, LuaChatCommand, "lua")
-            {
-                AllowServer = true,
-                HelpText = "Lua control."
-            });
-        }
-
-        public void OnGamePostInitialize(EventArgs args)
-        {
-            Me = TSPlayer.Server;
-
-            for (int i = 0; i < Luas.Count; i++)
-                Luas[i].LuaInit();
-
-            ServerApi.Hooks.ServerConnect.Deregister(this, OnServerConnect); // DEBUG SHIT
-        }
-
+        
         public void OnServerLeave(LeaveEventArgs args)
         {
             if (Me != null && args.Who == Me.Index)

@@ -1,4 +1,5 @@
-﻿using NLua;
+﻿using Newtonsoft.Json;
+using NLua;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,8 +22,12 @@ namespace MyLua
     {
         #region Data
 
+        [JsonProperty]
+        public string Name;
+        [JsonProperty]
+        public string[] Directories;
+
         private Lua Lua;
-        private string[] Directories;
         private Dictionary<string, ILuaHookHandler> HookHandlers = new Dictionary<string, ILuaHookHandler>();
         public Exception LastException = null;
         public List<ILuaCommand> LuaCommands = new List<ILuaCommand>();
@@ -35,6 +40,10 @@ namespace MyLua
         #endregion
 
         #region Initialize
+
+        //public LuaEnvironment()
+        //{
+        //}
 
         public LuaEnvironment(string[] directories)
         {
