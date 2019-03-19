@@ -71,4 +71,8 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\KeraLua.1.0.4\build\net45\KeraLua.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\KeraLua.1.0.4\build\net45\KeraLua.targets'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent>if not exist "$(ProjectDir)_BuildResult" mkdir "$(ProjectDir)_BuildResult"
+copy /Y "$(TargetDir)$(TargetName).dll" "$(ProjectDir)_BuildResult\$(TargetName).dll</PostBuildEvent>
+  </PropertyGroup>
 </Project>

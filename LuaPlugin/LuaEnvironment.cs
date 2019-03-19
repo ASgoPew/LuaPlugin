@@ -18,7 +18,7 @@ using TShockAPI;
 
 namespace MyLua
 {
-    public class LuaEnvironment : IDisposable
+    public class LuaEnvironment2 : IDisposable
     {
         public static int LastExceptionLuaIndex = -1;
 
@@ -34,7 +34,7 @@ namespace MyLua
         public bool ForceStopped = false;
         public bool PrintErrorStarted = false;
 
-        public LuaEnvironment(int index, string directory = null)
+        public LuaEnvironment2(int index, string directory = null)
         {
             this.Index = index;
             this.LuaDirectory = directory;
@@ -698,7 +698,7 @@ namespace MyLua
 
         public void ShowLastException()
         {
-            if (LuaEnvironment.LastExceptionLuaIndex >= 0)
+            if (LuaEnvironment2.LastExceptionLuaIndex >= 0)
             {
                 Exception e = LastException;
                 PrintError($"\n> Message: {e.Message}\n> Data: {e.Data}\n> InnerException: {e.InnerException}\n" +

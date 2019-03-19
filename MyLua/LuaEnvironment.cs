@@ -11,6 +11,7 @@ namespace MyLua
 {
     public static class NLuaExtensions
     {
+        // TODO: Change (THIS SHIT IS FOR MARKING LUASTATE AS DISPOSED)
         public static void Enable(this Lua lua)  => lua.UseTraceback = true;
         public static void Disable(this Lua lua) => lua.UseTraceback = false;
         public static bool Enabled(this Lua lua) => lua.UseTraceback;
@@ -22,11 +23,14 @@ namespace MyLua
 
         private Lua Lua;
         private string[] Directories;
-        private Dictionary<string, ILuaHookHandler> Handlers = new Dictionary<string, ILuaHookHandler>();
+        private Dictionary<string, ILuaHookHandler> HookHandlers = new Dictionary<string, ILuaHookHandler>();
         public Exception LastException = null;
         public List<ILuaCommand> LuaCommands = new List<ILuaCommand>();
         private object Locker = new object();
         public Dictionary<string, object> Data = new Dictionary<string, object>();
+
+        public void AddHook(ILuaHookHandler hook) =>
+            HookHandlers.Add(hook.Name, hook);
 
         #endregion
 
@@ -74,7 +78,7 @@ namespace MyLua
                 CallFunctionByName("OnLuaClose"); // There might not be such function.
                 ClearCommands();
                 Lua.Dispose();
-                Lua.UseTraceback = true; // TODO: Change (THIS SHIT IS FOR MARKING LUASTATE AS DISPOSED)
+                Lua.Disable();
             }
         }
 
@@ -223,7 +227,7 @@ namespace MyLua
             {
                 if (!oldLua.Enabled())
                     return;
-                foreach (ILuaHookHandler handler in Handlers.Values) // TODO: Lazy hook handler creation
+                foreach (ILuaHookHandler handler in HookHandlers.Values) // TODO: Lazy hook handler creation
                     handler.Update();
             }
         }
@@ -238,7 +242,7 @@ namespace MyLua
             {
                 if (!oldLua.Enabled())
                     return;
-                Handlers[name].Update();
+                HookHandlers[name].Update();
             }
         }
 
@@ -252,8 +256,8 @@ namespace MyLua
             {
                 if (!oldLua.Enabled())
                     return;
-                if (Handlers[name].Active)
-                    Handlers[name].Unhook();
+                if (HookHandlers[name].Active)
+                    HookHandlers[name].Disable();
                 Lua[name] = null;
             }
         }
@@ -263,9 +267,9 @@ namespace MyLua
 
         public void UnhookAll()
         {
-            foreach (var pair in Handlers)
+            foreach (var pair in HookHandlers)
                 if (pair.Value.Active)
-                    pair.Value.Unhook();
+                    pair.Value.Disable();
         }
 
         #endregion

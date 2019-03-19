@@ -12,11 +12,11 @@ namespace MyLua
     {
         private bool Disposed = false;
         public LuaFunction Function;
-        public LuaEnvironment LuaEnv;
+        public LuaEnvironment2 LuaEnv;
         public Lua Lua;
         public Command Cmd;
 
-        public LuaCommand(LuaEnvironment luaEnv, object namesObject, object permissionObject, LuaTable parameters, LuaFunction function)
+        public LuaCommand(LuaEnvironment2 luaEnv, object namesObject, object permissionObject, LuaTable parameters, LuaFunction function)
         {
             this.Function = function;
             this.LuaEnv = luaEnv;

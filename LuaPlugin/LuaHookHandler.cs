@@ -14,19 +14,15 @@ using TShockAPI.Hooks;
 
 namespace MyLua
 {
-    public class MyLuaHookHandler<T>
+    public class LuaHookHandler<T> : ILuaHookHandler
     {
         LuaEnvironment LuaEnv { get; set; }
         public string Name { get; set; }
-        Action<bool, T> Control { get; set; }
-        T Hook { get; set; }
+        Action<LuaHookHandler<T>, bool?> Control { get; set; }
+        public T Handler { get; set; }
+        public bool Active { get; private set; }
 
-        public static MyLuaHookHandler<T> Create(LuaEnvironment luaEnv, string name, Action<bool, T> control)
-        {
-            return null;
-        }
-
-        public MyLuaHookHandler(LuaEnvironment luaEnv, string name, Action<bool, T> control)
+        public LuaHookHandler(LuaEnvironment luaEnv, string name, Action<LuaHookHandler<T>, bool?> control)
         {
             LuaEnv = luaEnv;
             Name = name;
@@ -35,48 +31,69 @@ namespace MyLua
 
         public void Invoke(params object[] args)
         {
+            try
+            {
+                LuaEnv.CallFunctionByName(Name, args);
+            }
+            catch (Exception e)
+            {
+                Control.Invoke(this, false);
+                LuaEnv.Set(Name, null);
+                //LuaEnv.LuaException.Invoke(e);
+            }
         }
 
-        public void SetHook(T hook)
+        public void Update()
         {
-            System.Reflection.ConstructorInfo c = typeof(T).GetConstructors()[0];
-            c.GetParameters();
-            object hook2 = new Action(() => { }); // Creating Action with required parameters
-            // We can generate Action on IL level
-            c.Invoke(new object[] { hook2 });
-            Hook = hook;
+            LuaFunction f = LuaEnv.Get(Name) as LuaFunction;
+            if (f != null && !Active)
+                Enable();
+            else if (f == null && Active)
+                Disable();
         }
 
-        public void Enable() => Control.Invoke(true, Hook);
-        public void Disable() => Control.Invoke(false, Hook);
+        public void Enable()
+        {
+            Active = true;
+            Control.Invoke(this, true);
+        }
+
+        public void Disable()
+        {
+            Control.Invoke(this, false);
+            Active = false;
+        }
     }
 
-    public class LuaHookHandler
+    public class LuaHookHandler2
     {
-        MyLuaHookHandler<Action> h = new MyLuaHookHandler<Action>(null, "OnTick", (on, h) =>
+        LuaHookHandler<Action> h = new LuaHookHandler<Action>(null, "OnTick", (hook, state) =>
         {
-            if (on) Main.OnTick += h; else Main.OnTick -= h;
+            if      (state ==  true) Main.OnTick += hook.Handler;
+            else if (state == false) Main.OnTick -= hook.Handler;
+            else hook.Handler = () => hook.Invoke();
         });
-        MyLuaHookHandler<HookHandler<EventArgs>> h2 = new MyLuaHookHandler<HookHandler<EventArgs>>(null, "OnTick", (on, h) =>
+        LuaHookHandler<HookHandler<EventArgs>> h2 = new LuaHookHandler<HookHandler<EventArgs>>(null, "OnTick", (hook, state) =>
         {
-            if (on) ServerApi.Hooks.GameInitialize.Register(null, h);
-            else ServerApi.Hooks.GameInitialize.Deregister(null, h);
+            if      (state ==  true) ServerApi.Hooks.GameInitialize.Register(null, hook.Handler);
+            else if (state == false) ServerApi.Hooks.GameInitialize.Deregister(null, hook.Handler);
+            else hook.Handler = (args) => hook.Invoke(args);
         });
-        MyLuaHookHandler<AccountHooks.AccountCreateD> h3 = new MyLuaHookHandler<AccountHooks.AccountCreateD>(null, "OnTick", (on, h) =>
+        LuaHookHandler<AccountHooks.AccountCreateD> h3 = new LuaHookHandler<AccountHooks.AccountCreateD>(null, "OnTick", (hook, state) =>
         {
-
+            if      (state ==  true) AccountHooks.AccountCreate += hook.Handler;
+            else if (state == false) AccountHooks.AccountCreate -= hook.Handler;
+            else hook.Handler = (args) => hook.Invoke(args);
         });
-        MyLuaHookHandler<EventHandler<GetDataHandlers.NewProjectileEventArgs>> h4 = new MyLuaHookHandler<EventHandler<GetDataHandlers.NewProjectileEventArgs>>(null, "asd", (on, h) =>
+        LuaHookHandler<EventHandler<GetDataHandlers.NewProjectileEventArgs>> h4 = new LuaHookHandler<EventHandler<GetDataHandlers.NewProjectileEventArgs>>(null, "asd", (hook, state) =>
         {
-
+            if      (state ==  true) GetDataHandlers.NewProjectile += hook.Handler;
+            else if (state == false) GetDataHandlers.NewProjectile -= hook.Handler;
+            else hook.Handler = (sender, args) => hook.Invoke(args);
         });
 
         public void a()
         {
-            h.SetHook(() => h.Invoke());
-            h2.SetHook(new HookHandler<EventArgs>(args => h2.Invoke(args)));
-            h3.SetHook(new AccountHooks.AccountCreateD(args => h3.Invoke(args)));
-            h4.SetHook(new EventHandler<GetDataHandlers.NewProjectileEventArgs>((sender, args) => h4.Invoke(args)));
             typeof(AccountHooks.AccountCreateD).GetConstructors()[0].Invoke(new object[] {  });
         }
 
@@ -84,7 +101,7 @@ namespace MyLua
         //public delegate void HookHandler<T>(T args);
         //public delegate void HookHandler<T, U>(T sender, U args);
 
-        public LuaEnvironment LuaEnv;
+        public LuaEnvironment2 LuaEnv;
         public string Name;
         public bool Active = false;
 
@@ -532,7 +549,7 @@ namespace MyLua
             return new EventHandler<T>((object sender, T args) => { OnHook(args); });
         }
 
-        public LuaHookHandler(LuaEnvironment newLuaEnv, string newName)
+        public LuaHookHandler2(LuaEnvironment2 newLuaEnv, string newName)
         {
             //handler = GetType().GetMethod("CreateHookHandler").MakeGenericMethod(typeof(DropBossBagEventArgs)).Invoke(this, null);
 
@@ -828,15 +845,15 @@ namespace MyLua
                     break;
 
                 // TODO???: OTAPI.Hooks
-                /*case "OnProjectilePreKill":
-                    handler = new OTAPI.Modifications.NetworkText.AfterChatMessageHandler((text, color, ignore) => { return OnHookWithResult(); });
-                    handlerControl = (Action<bool>)((on) => { if (on) OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage += handler; else OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage -= handler; });
-                    OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage += new Action(() => { });
-                    break;
                 case "OnProjectilePreKill":
-                    handler = new OTAPI.Hooks.Projectile.PreKillHandler((Projectile p) => { return OnHookWithResult(p); });
-                    handlerControl = (Action<bool>)((on) => { if (on) OTAPI.Hooks.Projectile.PreKill += handler; else OTAPI.Hooks.Projectile.PreKill -= handler; });
-                    break;*/
+                    Handler = new OTAPI.Modifications.NetworkText.AfterChatMessageHandler(this.f);
+                    //Control = (Action<bool>)((on) => { if (on) OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage += handler; else OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage -= handler; });
+                    //OTAPI.Hooks.BroadcastChatMessage.AfterBroadcastChatMessage += new Action(() => { });
+                    break;
+                //case "OnProjectilePreKill":
+                    //handler = new OTAPI.Hooks.Projectile.PreKillHandler((Projectile p) => { return OnHookWithResult(p); });
+                    //handlerControl = (Action<bool>)((on) => { if (on) OTAPI.Hooks.Projectile.PreKill += handler; else OTAPI.Hooks.Projectile.PreKill -= handler; });
+                    //break;
                 
                 /*case "OnProjectilePostKill":
                     handler = new OTAPI.Hooks.Projectile.PostKilledHandler((Projectile p) => { OnHook(p); });
@@ -847,6 +864,19 @@ namespace MyLua
                     LuaEnv.PrintError("Trying to create unknown hook!");
                     break;
             }
+        }
+
+        /*public void f(Terraria.Localization.NetworkText text, ref Microsoft.Xna.Framework.Color color, ref int igonrePlayer)
+        {
+            
+        }*/
+    }
+
+    public static class cl
+    {
+        public static void f(this LuaHookHandler2 hook, Terraria.Localization.NetworkText text, ref Microsoft.Xna.Framework.Color color, ref int igonrePlayer)
+        {
+
         }
     }
 }

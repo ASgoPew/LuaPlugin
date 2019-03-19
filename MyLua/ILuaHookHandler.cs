@@ -8,11 +8,11 @@ namespace MyLua
 {
     public interface ILuaHookHandler
     {
-        string Name { get; set; }
-        bool Active { get; set; }
+        string Name { get; }
+        bool Active { get; }
 
         void Update();
-        void Hook();
-        void Unhook();
+        void Enable();
+        void Disable();
     }
 }

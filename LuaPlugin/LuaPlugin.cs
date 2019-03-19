@@ -25,7 +25,7 @@ namespace MyLua
         public override Version Version => new Version(1, 0, 0, 0);
         
         public static LuaPlugin Instance = null;
-        public static List<LuaEnvironment> Luas = new List<LuaEnvironment>();
+        public static List<LuaEnvironment2> Luas = new List<LuaEnvironment2>();
         public static int[] LuaEnvIndex = new int[Main.maxPlayers + 1];
         public static string PrintCommandSpecifier = ";;";
         public static string ShowCommandSpecifier = ";=";
@@ -76,7 +76,7 @@ namespace MyLua
                 ServerApi.Hooks.ServerCommand.Deregister(this, OnServerCommand);
                 ServerApi.Hooks.ServerLeave.Deregister(this, OnServerLeave);
             }
-            foreach (LuaEnvironment l in Luas)
+            foreach (LuaEnvironment2 l in Luas)
                 l.Dispose();
             base.Dispose(disposing);
         }
@@ -209,7 +209,7 @@ end");
             {
                 if (Path.GetFileName(envDir) == index.ToString())
                 {
-                    Luas.Add(new LuaEnvironment(index, envDir));
+                    Luas.Add(new LuaEnvironment2(index, envDir));
                     if (!Luas[index++].Initialize(null, false))
                         return false;
                 }
@@ -236,7 +236,7 @@ end");
             if (text.StartsWith(OnTickCommandSpecifier))
             {
                 string onTickBody = text.Substring(OnTickCommandSpecifier.Length);
-                LuaEnvironment lua = player.LuaEnv();
+                LuaEnvironment2 lua = player.LuaEnv();
                 if (onTickBody.Length > 0)
                     RunLua(player, "OnTick = function(frame) " + onTickBody + " end"); // OnTick or OnUpdate?
                 else
@@ -302,7 +302,7 @@ end");
                         args.Player.SendInfoMessage(args.Player.LuaEnv().GetState().IsExecuting.ToString());
                         break;
                     case "forcestop": // WARNING: This command is not safe. It can cause AccessViolationException that can't be handled by try-catch or UnhandledException handler. Use at your own risk.
-                        LuaEnvironment lua = args.Player.LuaEnv();
+                        LuaEnvironment2 lua = args.Player.LuaEnv();
                         lua.ForceStop();
                         Task.Delay(1000).ContinueWith(_ => lua.ForceResume());
                         break;
@@ -318,7 +318,7 @@ end");
             Me = args.Player;
             if (args.Parameters.Count == 1)
             {
-                LuaEnvironment lua = args.Player.LuaEnv();
+                LuaEnvironment2 lua = args.Player.LuaEnv();
                 if (lua.Initialize(Me, true))
                     Me.SendSuccessMessage($"Lua[{lua.Index}] has been reset.");
                 else
@@ -354,7 +354,7 @@ end");
         public void AddLuaCommand(CommandArgs args)
         {
             //me = args.Player;
-            LuaEnvironment lua = new LuaEnvironment(Luas.Count);
+            LuaEnvironment2 lua = new LuaEnvironment2(Luas.Count);
             Luas.Add(lua);
             if (!args.Player.LuaEnv().Initialize(Me, true))
                 return;
@@ -446,7 +446,7 @@ end");
             TSPlayer player = tuple.Item1;
             string command = tuple.Item2;
 
-            LuaEnvironment lua = player.LuaEnv(); // luaIndex can be modified during DoString(...)
+            LuaEnvironment2 lua = player.LuaEnv(); // luaIndex can be modified during DoString(...)
 
             // TODO: Make unsafe userscript run ability (since currently all hooks wait for all other scripts to end)
             // Just let hooks run in another LuaEnvironment
