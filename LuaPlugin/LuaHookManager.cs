@@ -8,14 +8,14 @@ using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.Hooks;
+using MyLua;
+using System.ComponentModel;
 
 namespace LuaPlugin
 {
     public class LuaHookManager
     {
-        
-
-        public void Initialize(LuaEnvironment luaEnv)
+        public static void Initialize(LuaEnvironment luaEnv)
         {
             List<ILuaHookHandler> hooks = new List<ILuaHookHandler>
             {
@@ -155,234 +155,452 @@ namespace LuaPlugin
                     else if (state == false) ServerApi.Hooks.NetSendBytes.Deregister(LuaPlugin.Instance, hook.Handler);
                     else hook.Handler = (args) => hook.Invoke(args);
                 }),
-                /*case "OnSendData":
-                    if (on) ServerApi.Hooks.NetSendData.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NetSendData.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcAiUpdate":
-                    if (on) ServerApi.Hooks.NpcAIUpdate.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcAIUpdate.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcKilled":
-                    if (on) ServerApi.Hooks.NpcKilled.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcKilled.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcLootDrop":
-                    if (on) ServerApi.Hooks.NpcLootDrop.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcLootDrop.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcNetDefaults":
-                    if (on) ServerApi.Hooks.NpcNetDefaults.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcNetDefaults.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcSetDefaultsInt":
-                    if (on) ServerApi.Hooks.NpcSetDefaultsInt.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcSetDefaultsInt.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcSetDefaultsString":
-                    if (on) ServerApi.Hooks.NpcSetDefaultsString.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcSetDefaultsString.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcSpawn":
-                    if (on) ServerApi.Hooks.NpcSpawn.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcSpawn.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcStrike":
-                    if (on) ServerApi.Hooks.NpcStrike.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcStrike.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcTransform":
-                    if (on) ServerApi.Hooks.NpcTransform.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcTransform.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnNpcTriggerPressurePlate":
-                    if (on) ServerApi.Hooks.NpcTriggerPressurePlate.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.NpcTriggerPressurePlate.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnPlayerTriggerPressurePlate":
-                    if (on) ServerApi.Hooks.PlayerTriggerPressurePlate.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.PlayerTriggerPressurePlate.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnPlayerUpdatePhysics":
-                    if (on) ServerApi.Hooks.PlayerUpdatePhysics.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.PlayerUpdatePhysics.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnProjectileAiUpdate":
-                    if (on) ServerApi.Hooks.ProjectileAIUpdate.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ProjectileAIUpdate.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnProjectileSetDefaults":
-                    if (on) ServerApi.Hooks.ProjectileSetDefaults.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ProjectileSetDefaults.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnProjectileTriggerPressurePlate":
-                    if (on) ServerApi.Hooks.ProjectileTriggerPressurePlate.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ProjectileTriggerPressurePlate.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnServerBroadcast":
-                    if (on) ServerApi.Hooks.ServerBroadcast.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ServerBroadcast.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnServerChat":
-                    if (on) ServerApi.Hooks.ServerChat.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ServerChat.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnServerCommand":
-                    if (on) ServerApi.Hooks.ServerCommand.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ServerCommand.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnConnect":
-                    if (on) ServerApi.Hooks.ServerConnect.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ServerConnect.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnJoin":
-                    if (on) ServerApi.Hooks.ServerJoin.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ServerJoin.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnLeave":
-                    if (on) ServerApi.Hooks.ServerLeave.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ServerLeave.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnServerSocketReset":
-                    if (on) ServerApi.Hooks.ServerSocketReset.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.ServerSocketReset.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnAnnouncementBox":
-                    if (on) ServerApi.Hooks.WireTriggerAnnouncementBox.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.WireTriggerAnnouncementBox.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnChristmasCheck":
-                    if (on) ServerApi.Hooks.WorldChristmasCheck.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.WorldChristmasCheck.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnHalloweenCheck":
-                    if (on) ServerApi.Hooks.WorldHalloweenCheck.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.WorldHalloweenCheck.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnMeteorDrop":
-                    if (on) ServerApi.Hooks.WorldMeteorDrop.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.WorldMeteorDrop.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnWorldSave":
-                    if (on) ServerApi.Hooks.WorldSave.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.WorldSave.Deregister(LuaPlugin.Instance, Handler);
-                    break;
-                case "OnStartHardMode":
-                    if (on) ServerApi.Hooks.WorldStartHardMode.Register(LuaPlugin.Instance, Handler); else ServerApi.Hooks.WorldStartHardMode.Deregister(LuaPlugin.Instance, Handler);
-                    break;
+                new LuaHookHandler<HookHandler<SendDataEventArgs>>(luaEnv, "OnSendData", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NetSendData.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NetSendData.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<NpcAiUpdateEventArgs>>(luaEnv, "OnNpcAiUpdate", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcAIUpdate.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcAIUpdate.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<NpcKilledEventArgs>>(luaEnv, "OnNpcKilled", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcKilled.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcKilled.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<NpcLootDropEventArgs>>(luaEnv, "OnNpcLootDrop", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcLootDrop.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcLootDrop.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<SetDefaultsEventArgs<NPC, int>>>(luaEnv, "OnNpcNetDefaults", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcNetDefaults.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcNetDefaults.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<SetDefaultsEventArgs<NPC, int>>>(luaEnv, "OnNpcSetDefaultsInt", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcSetDefaultsInt.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcSetDefaultsInt.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<SetDefaultsEventArgs<NPC, string>>>(luaEnv, "OnNpcSetDefaultsString", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcSetDefaultsString.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcSetDefaultsString.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<NpcSpawnEventArgs>>(luaEnv, "OnNpcSpawn", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcSpawn.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcSpawn.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<NpcStrikeEventArgs>>(luaEnv, "OnNpcStrike", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcStrike.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcStrike.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<NpcTransformationEventArgs>>(luaEnv, "OnNpcTransform", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcTransform.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcTransform.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<TriggerPressurePlateEventArgs<NPC>>>(luaEnv, "OnNpcTriggerPressurePlate", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.NpcTriggerPressurePlate.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.NpcTriggerPressurePlate.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<TriggerPressurePlateEventArgs<Player>>>(luaEnv, "OnPlayerTriggerPressurePlate", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.PlayerTriggerPressurePlate.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.PlayerTriggerPressurePlate.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<UpdatePhysicsEventArgs>>(luaEnv, "OnPlayerUpdatePhysics", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.PlayerUpdatePhysics.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.PlayerUpdatePhysics.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<ProjectileAiUpdateEventArgs>>(luaEnv, "OnProjectileAiUpdate", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ProjectileAIUpdate.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ProjectileAIUpdate.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<SetDefaultsEventArgs<Projectile, int>>>(luaEnv, "OnProjectileSetDefaults", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ProjectileSetDefaults.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ProjectileSetDefaults.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<TriggerPressurePlateEventArgs<Projectile>>>(luaEnv, "OnProjectileTriggerPressurePlate", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ProjectileTriggerPressurePlate.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ProjectileTriggerPressurePlate.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<ServerBroadcastEventArgs>>(luaEnv, "OnServerBroadcast", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ServerBroadcast.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ServerBroadcast.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<ServerChatEventArgs>>(luaEnv, "OnServerChat", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ServerChat.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ServerChat.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<CommandEventArgs>>(luaEnv, "OnServerCommand", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ServerCommand.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ServerCommand.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<ConnectEventArgs>>(luaEnv, "OnServerConnect", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ServerConnect.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ServerConnect.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<JoinEventArgs>>(luaEnv, "OnServerJoin", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ServerJoin.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ServerJoin.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<LeaveEventArgs>>(luaEnv, "OnServerLeave", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ServerLeave.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ServerLeave.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<SocketResetEventArgs>>(luaEnv, "OnServerSocketReset", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.ServerSocketReset.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.ServerSocketReset.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<TriggerAnnouncementBoxEventArgs>>(luaEnv, "OnWireTriggerAnnouncementBox", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.WireTriggerAnnouncementBox.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.WireTriggerAnnouncementBox.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<ChristmasCheckEventArgs>>(luaEnv, "OnWorldChristmasCheck", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.WorldChristmasCheck.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.WorldChristmasCheck.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<HalloweenCheckEventArgs>>(luaEnv, "OnWorldHalloweenCheck", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.WorldHalloweenCheck.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.WorldHalloweenCheck.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<MeteorDropEventArgs>>(luaEnv, "OnWorldMeteorDrop", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.WorldMeteorDrop.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.WorldMeteorDrop.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<WorldSaveEventArgs>>(luaEnv, "OnWorldSave", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.WorldSave.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.WorldSave.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<HookHandler<HandledEventArgs>>(luaEnv, "OnWorldStartHardMode", (hook, state) =>
+                {
+                    if      (state ==  true) ServerApi.Hooks.WorldStartHardMode.Register(LuaPlugin.Instance, hook.Handler);
+                    else if (state == false) ServerApi.Hooks.WorldStartHardMode.Deregister(LuaPlugin.Instance, hook.Handler);
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
 
                 // TShockAPI.Hooks.AccountHooks
-                case "OnAccountCreate":
-                    if (on) AccountHooks.AccountCreate += Handler; else AccountHooks.AccountCreate -= Handler;
-                    break;
-                case "OnAccountDelete":
-                    if (on) AccountHooks.AccountDelete += Handler; else AccountHooks.AccountDelete -= Handler;
-                    break;
+                
+                new LuaHookHandler<AccountHooks.AccountCreateD>(luaEnv, "OnAccountCreate", (hook, state) =>
+                {
+                    if      (state ==  true) AccountHooks.AccountCreate += hook.Handler;
+                    else if (state == false) AccountHooks.AccountCreate -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<AccountHooks.AccountDeleteD>(luaEnv, "OnAccountDelete", (hook, state) =>
+                {
+                    if      (state ==  true) AccountHooks.AccountDelete += hook.Handler;
+                    else if (state == false) AccountHooks.AccountDelete -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
 
                 // TShockAPI.Hooks.GeneralHooks
-                case "OnReloadEvent":
-                    if (on) GeneralHooks.ReloadEvent += Handler; else GeneralHooks.ReloadEvent -= Handler;
-                    break;
+                
+                new LuaHookHandler<GeneralHooks.ReloadEventD>(luaEnv, "OnReloadEvent", (hook, state) =>
+                {
+                    if      (state ==  true) GeneralHooks.ReloadEvent += hook.Handler;
+                    else if (state == false) GeneralHooks.ReloadEvent -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
 
                 // TShockAPI.Hooks.PlayerHooks
-                case "OnPlayerChat":
-                    if (on) PlayerHooks.PlayerChat += Handler; else PlayerHooks.PlayerChat -= Handler;
-                    break;
-                case "OnPlayerCommand":
-                    if (on) PlayerHooks.PlayerCommand += Handler; else PlayerHooks.PlayerCommand -= Handler;
-                    break;
-                case "OnPlayerLogout":
-                    if (on) PlayerHooks.PlayerLogout += Handler; else PlayerHooks.PlayerLogout -= Handler;
-                    break;
-                case "OnPlayerPermission":
-                    if (on) PlayerHooks.PlayerPermission += Handler; else PlayerHooks.PlayerPermission -= Handler;
-                    break;
-                case "OnPlayerPostLogin":
-                    if (on) PlayerHooks.PlayerPostLogin += Handler; else PlayerHooks.PlayerPostLogin -= Handler;
-                    break;
-                case "OnPlayerPreLogin":
-                    if (on) PlayerHooks.PlayerPreLogin += Handler; else PlayerHooks.PlayerPreLogin -= Handler;
-                    break;
+                new LuaHookHandler<PlayerHooks.PlayerChatD>(luaEnv, "OnPlayerChat", (hook, state) =>
+                {
+                    if      (state ==  true) PlayerHooks.PlayerChat += hook.Handler;
+                    else if (state == false) PlayerHooks.PlayerChat -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<PlayerHooks.PlayerCommandD>(luaEnv, "OnPlayerCommand", (hook, state) =>
+                {
+                    if      (state ==  true) PlayerHooks.PlayerCommand += hook.Handler;
+                    else if (state == false) PlayerHooks.PlayerCommand -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<PlayerHooks.PlayerLogoutD>(luaEnv, "OnPlayerLogout", (hook, state) =>
+                {
+                    if      (state ==  true) PlayerHooks.PlayerLogout += hook.Handler;
+                    else if (state == false) PlayerHooks.PlayerLogout -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<PlayerHooks.PlayerPermissionD>(luaEnv, "OnPlayerPermission", (hook, state) =>
+                {
+                    if      (state ==  true) PlayerHooks.PlayerPermission += hook.Handler;
+                    else if (state == false) PlayerHooks.PlayerPermission -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<PlayerHooks.PlayerPostLoginD>(luaEnv, "OnPlayerPostLogin", (hook, state) =>
+                {
+                    if      (state ==  true) PlayerHooks.PlayerPostLogin += hook.Handler;
+                    else if (state == false) PlayerHooks.PlayerPostLogin -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<PlayerHooks.PlayerPreLoginD>(luaEnv, "OnPlayerPreLogin", (hook, state) =>
+                {
+                    if      (state ==  true) PlayerHooks.PlayerPreLogin += hook.Handler;
+                    else if (state == false) PlayerHooks.PlayerPreLogin -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
 
                 // TShockAPI.Hooks.RegionHooks
-                case "OnRegionCreated":
-                    if (on) RegionHooks.RegionCreated += Handler; else RegionHooks.RegionCreated -= Handler;
-                    break;
-                case "OnRegionDeleted":
-                    if (on) RegionHooks.RegionDeleted += Handler; else RegionHooks.RegionDeleted -= Handler;
-                    break;
-                case "OnRegionEntered":
-                    if (on) RegionHooks.RegionEntered += Handler; else RegionHooks.RegionEntered -= Handler;
-                    break;
-                case "OnRegionLeft":
-                    if (on) RegionHooks.RegionLeft += Handler; else RegionHooks.RegionLeft -= Handler;
-                    break;
+                new LuaHookHandler<RegionHooks.RegionCreatedD>(luaEnv, "OnRegionCreated", (hook, state) =>
+                {
+                    if      (state ==  true) RegionHooks.RegionCreated += hook.Handler;
+                    else if (state == false) RegionHooks.RegionCreated -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<RegionHooks.RegionDeletedD>(luaEnv, "OnRegionDeleted", (hook, state) =>
+                {
+                    if      (state ==  true) RegionHooks.RegionDeleted += hook.Handler;
+                    else if (state == false) RegionHooks.RegionDeleted -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<RegionHooks.RegionEnteredD>(luaEnv, "OnRegionEntered", (hook, state) =>
+                {
+                    if      (state ==  true) RegionHooks.RegionEntered += hook.Handler;
+                    else if (state == false) RegionHooks.RegionEntered -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<RegionHooks.RegionLeftD>(luaEnv, "OnRegionLeft", (hook, state) =>
+                {
+                    if      (state ==  true) RegionHooks.RegionLeft += hook.Handler;
+                    else if (state == false) RegionHooks.RegionLeft -= hook.Handler;
+                    else hook.Handler = (args) => hook.Invoke(args);
+                }),
 
                 // TShockAPI.TShock
-                case "OnTShockInitialize":
-                    if (on) TShock.Initialized += Handler; else TShock.Initialized -= Handler;
-                    break;
+                new LuaHookHandler<Action>(luaEnv, "OnTShockInitialize", (hook, state) =>
+                {
+                    if      (state ==  true) TShock.Initialized += hook.Handler;
+                    else if (state == false) TShock.Initialized -= hook.Handler;
+                    else hook.Handler = () => hook.Invoke();
+                }),
 
                 // TShockAPI.GetDataHandlers
-                case "OnPacketChestItemChange":
-                    if (on) GetDataHandlers.ChestItemChange += Handler; else GetDataHandlers.ChestItemChange -= Handler;
-                    break;
-                case "OnPacketChestOpen":
-                    if (on) GetDataHandlers.ChestOpen += Handler; else GetDataHandlers.ChestOpen -= Handler;
-                    break;
-                case "OnPacketGemLockToggle":
-                    if (on) GetDataHandlers.GemLockToggle += Handler; else GetDataHandlers.GemLockToggle -= Handler;
-                    break;
-                case "OnPacketItemDrop":
-                    if (on) GetDataHandlers.ItemDrop += Handler; else GetDataHandlers.ItemDrop -= Handler;
-                    break;
-                case "OnPacketKillMe":
-                    if (on) GetDataHandlers.KillMe += Handler; else GetDataHandlers.KillMe -= Handler;
-                    break;
-                case "OnPacketLiquidSet":
-                    if (on) GetDataHandlers.LiquidSet += Handler; else GetDataHandlers.LiquidSet -= Handler;
-                    break;
-                case "OnPacketNewProjectile":
-                    if (on) GetDataHandlers.NewProjectile += Handler; else GetDataHandlers.NewProjectile -= Handler;
-                    break;
-                case "OnPacketNPCHome":
-                    if (on) GetDataHandlers.NPCHome += Handler; else GetDataHandlers.NPCHome -= Handler;
-                    break;
-                case "OnPacketNPCSpecial":
-                    if (on) GetDataHandlers.NPCSpecial += Handler; else GetDataHandlers.NPCSpecial -= Handler;
-                    break;
-                case "OnPacketNPCStrike":
-                    if (on) GetDataHandlers.NPCStrike += Handler; else GetDataHandlers.NPCStrike -= Handler;
-                    break;
-                case "OnPacketPaintTile":
-                    if (on) GetDataHandlers.PaintTile += Handler; else GetDataHandlers.PaintTile -= Handler;
-                    break;
-                case "OnPacketPaintWall":
-                    if (on) GetDataHandlers.PaintWall += Handler; else GetDataHandlers.PaintWall -= Handler;
-                    break;
-                case "OnPacketPlayerAnimation":
-                    if (on) GetDataHandlers.PlayerAnimation += Handler; else GetDataHandlers.PlayerAnimation -= Handler;
-                    break;
-                case "OnPacketPlayerBuff":
-                    if (on) GetDataHandlers.PlayerBuff += Handler; else GetDataHandlers.PlayerBuff -= Handler;
-                    break;
-                case "OnPacketPlayerBuffUpdate":
-                    if (on) GetDataHandlers.PlayerBuffUpdate += Handler; else GetDataHandlers.PlayerBuffUpdate -= Handler;
-                    break;
-                case "OnPacketPlayerDamage":
-                    if (on) GetDataHandlers.PlayerDamage += Handler; else GetDataHandlers.PlayerDamage -= Handler;
-                    break;
-                case "OnPacketPlayerHP":
-                    if (on) GetDataHandlers.PlayerHP += Handler; else GetDataHandlers.PlayerHP -= Handler;
-                    break;
-                case "OnPacketPlayerInfo":
-                    if (on) GetDataHandlers.PlayerInfo += Handler; else GetDataHandlers.PlayerInfo -= Handler;
-                    break;
-                case "OnPacketPlayerMana":
-                    if (on) GetDataHandlers.PlayerMana += Handler; else GetDataHandlers.PlayerMana -= Handler;
-                    break;
-                case "OnPacketPlayerSlot":
-                    if (on) GetDataHandlers.PlayerSlot += Handler; else GetDataHandlers.PlayerSlot -= Handler;
-                    break;
-                case "OnPacketPlayerSpawn":
-                    if (on) GetDataHandlers.PlayerSpawn += Handler; else GetDataHandlers.PlayerSpawn -= Handler;
-                    break;
-                case "OnPacketPlayerTeam":
-                    if (on) GetDataHandlers.PlayerTeam += Handler; else GetDataHandlers.PlayerTeam -= Handler;
-                    break;
-                case "OnPacketPlayerUpdate":
-                    if (on) GetDataHandlers.PlayerUpdate += Handler; else GetDataHandlers.PlayerUpdate -= Handler;
-                    break;
-                case "OnPacketSendTileSquare":
-                    if (on) GetDataHandlers.SendTileSquare += Handler; else GetDataHandlers.SendTileSquare -= Handler;
-                    break;
-                case "OnPacketSign":
-                    if (on) GetDataHandlers.Sign += Handler; else GetDataHandlers.Sign -= Handler;
-                    break;
-                case "OnPacketTeleport":
-                    if (on) GetDataHandlers.Teleport += Handler; else GetDataHandlers.Teleport -= Handler;
-                    break;
-                case "OnPacketTileEdit":
-                    if (on) GetDataHandlers.TileEdit += Handler; else GetDataHandlers.TileEdit -= Handler;
-                    break;
-                case "OnPacketTileKill":
-                    if (on) GetDataHandlers.TileKill += Handler; else GetDataHandlers.TileKill -= Handler;
-                    break;
-                case "OnPacketTogglePvp":
-                    if (on) GetDataHandlers.TogglePvp += Handler; else GetDataHandlers.TogglePvp -= Handler;
-                    break;*/
+                new LuaHookHandler<EventHandler<GetDataHandlers.ChestItemEventArgs>>(luaEnv, "OnPacketChestItemChange", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.ChestItemChange += hook.Handler;
+                    else if (state == false) GetDataHandlers.ChestItemChange -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.ChestOpenEventArgs>>(luaEnv, "OnPacketChestOpen", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.ChestOpen += hook.Handler;
+                    else if (state == false) GetDataHandlers.ChestOpen -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.GemLockToggleEventArgs>>(luaEnv, "OnPacketGemLockToggle", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.GemLockToggle += hook.Handler;
+                    else if (state == false) GetDataHandlers.GemLockToggle -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.ItemDropEventArgs>>(luaEnv, "OnPacketItemDrop", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.ItemDrop += hook.Handler;
+                    else if (state == false) GetDataHandlers.ItemDrop -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.KillMeEventArgs>>(luaEnv, "OnPacketKillMe", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.KillMe += hook.Handler;
+                    else if (state == false) GetDataHandlers.KillMe -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.LiquidSetEventArgs>>(luaEnv, "OnPacketLiquidSet", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.LiquidSet += hook.Handler;
+                    else if (state == false) GetDataHandlers.LiquidSet -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.NewProjectileEventArgs>>(luaEnv, "OnPacketNewProjectile", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.NewProjectile += hook.Handler;
+                    else if (state == false) GetDataHandlers.NewProjectile -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.NPCHomeChangeEventArgs>>(luaEnv, "OnPacketNPCHome", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.NPCHome += hook.Handler;
+                    else if (state == false) GetDataHandlers.NPCHome -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.NPCSpecialEventArgs>>(luaEnv, "OnPacketNPCSpecial", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.NPCSpecial += hook.Handler;
+                    else if (state == false) GetDataHandlers.NPCSpecial -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.NPCStrikeEventArgs>>(luaEnv, "OnPacketNPCStrike", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.NPCStrike += hook.Handler;
+                    else if (state == false) GetDataHandlers.NPCStrike -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PaintTileEventArgs>>(luaEnv, "OnPacketPaintTile", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PaintTile += hook.Handler;
+                    else if (state == false) GetDataHandlers.PaintTile -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PaintWallEventArgs>>(luaEnv, "OnPacketPaintWall", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PaintWall += hook.Handler;
+                    else if (state == false) GetDataHandlers.PaintWall -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerAnimationEventArgs>>(luaEnv, "OnPacketPlayerAnimation", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerAnimation += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerAnimation -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerBuffEventArgs>>(luaEnv, "OnPacketPlayerBuff", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerBuff += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerBuff -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerBuffUpdateEventArgs>>(luaEnv, "OnPacketPlayerBuffUpdate", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerBuffUpdate += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerBuffUpdate -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerDamageEventArgs>>(luaEnv, "OnPacketPlayerDamage", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerDamage += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerDamage -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerHPEventArgs>>(luaEnv, "OnPacketPlayerHP", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerHP += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerHP -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerInfoEventArgs>>(luaEnv, "OnPacketPlayerInfo", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerInfo += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerInfo -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerManaEventArgs>>(luaEnv, "OnPacketPlayerMana", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerMana += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerMana -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerSlotEventArgs>>(luaEnv, "OnPacketPlayerSlot", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerSlot += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerSlot -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.SpawnEventArgs>>(luaEnv, "OnPacketPlayerSpawn", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerSpawn += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerSpawn -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerTeamEventArgs>>(luaEnv, "OnPacketPlayerTeam", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerTeam += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerTeam -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.PlayerUpdateEventArgs>>(luaEnv, "OnPacketPlayerUpdate", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.PlayerUpdate += hook.Handler;
+                    else if (state == false) GetDataHandlers.PlayerUpdate -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.SendTileSquareEventArgs>>(luaEnv, "OnPacketSendTileSquare", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.SendTileSquare += hook.Handler;
+                    else if (state == false) GetDataHandlers.SendTileSquare -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.SignEventArgs>>(luaEnv, "OnPacketSign", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.Sign += hook.Handler;
+                    else if (state == false) GetDataHandlers.Sign -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.TeleportEventArgs>>(luaEnv, "OnPacketTeleport", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.Teleport += hook.Handler;
+                    else if (state == false) GetDataHandlers.Teleport -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.TileEditEventArgs>>(luaEnv, "OnPacketTileEdit", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.TileEdit += hook.Handler;
+                    else if (state == false) GetDataHandlers.TileEdit -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.TileKillEventArgs>>(luaEnv, "OnPacketTileKill", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.TileKill += hook.Handler;
+                    else if (state == false) GetDataHandlers.TileKill -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                }),
+                new LuaHookHandler<EventHandler<GetDataHandlers.TogglePvpEventArgs>>(luaEnv, "OnPacketTogglePvp", (hook, state) =>
+                {
+                    if      (state ==  true) GetDataHandlers.TogglePvp += hook.Handler;
+                    else if (state == false) GetDataHandlers.TogglePvp -= hook.Handler;
+                    else hook.Handler = (sender, args) => hook.Invoke(args);
+                })
             };
 
             foreach (var hook in hooks)

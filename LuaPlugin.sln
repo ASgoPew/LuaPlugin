@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LuaPlugin", "LuaPlugin\LuaPlugin.csproj", "{10C51A09-F455-4087-A9F3-9B533CA5346E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7DC9F60C-E42F-4E26-BAE1-1382E051E083} = {7DC9F60C-E42F-4E26-BAE1-1382E051E083}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLuaTest", "NLuaTest\NLuaTest.csproj", "{6B27AB8A-924D-43E4-9FC3-42E764A815A6}"
 EndProject

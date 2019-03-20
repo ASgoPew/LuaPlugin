@@ -1,13 +1,22 @@
-﻿using Terraria;
+﻿using MyLua;
+using Terraria;
 using TShockAPI;
 
-namespace MyLua
+namespace LuaPlugin
 {
     public static class TSPlayerExtension
     {
-        public static LuaEnvironment2 LuaEnv(this TSPlayer player)
+        public static LuaEnvironment LuaEnv(this TSPlayer player)
         {
-            return LuaPlugin.Luas[player.HasPermission("lua.control") ? LuaPlugin.LuaEnvIndex[player.Index >= 0 ? player.Index : Main.maxPlayers] : Config.UntrustedLuaIndex];
+            if (player.HasPermission(Config.ControlPermission))
+            {
+                string env = LuaPlugin.LuaEnv[player.Index >= 0 ? player.Index : Main.maxPlayers];
+                if (env != null)
+                    return Config.Environments[env];
+            }
+            else if (Config.UntrustedLua != null)
+                return Config.Environments[Config.UntrustedLua];
+            return null;
         }
     }
 }

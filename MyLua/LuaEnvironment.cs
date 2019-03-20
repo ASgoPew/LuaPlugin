@@ -13,18 +13,20 @@ namespace MyLua
     public static class NLuaExtensions
     {
         // TODO: Change (THIS SHIT IS FOR MARKING LUASTATE AS DISPOSED)
-        public static void Enable(this Lua lua)  => lua.UseTraceback = true;
-        public static void Disable(this Lua lua) => lua.UseTraceback = false;
-        public static bool Enabled(this Lua lua) => lua.UseTraceback;
+        public static void Enable(this Lua lua) => lua.UseTraceback = LuaEnvironment.UseTraceback;
+        public static void Disable(this Lua lua) => lua.UseTraceback = !LuaEnvironment.UseTraceback;
+        public static bool IsEnabled(this Lua lua) => lua.UseTraceback == LuaEnvironment.UseTraceback;
     }
 
     public class LuaEnvironment : IDisposable
     {
         #region Data
 
-        [JsonProperty]
+        public static bool UseTraceback = true;
+
+        [JsonProperty("name")]
         public string Name;
-        [JsonProperty]
+        [JsonProperty("directories")]
         public string[] Directories;
 
         private Lua Lua;
@@ -34,17 +36,19 @@ namespace MyLua
         private object Locker = new object();
         public Dictionary<string, object> Data = new Dictionary<string, object>();
 
+        public delegate void LuaHookExceptionD(string name, Exception e);
+        public event LuaHookExceptionD LuaHookException;
+
         public void AddHook(ILuaHookHandler hook) =>
             HookHandlers.Add(hook.Name, hook);
+
+        public void RemoveHook(ILuaHookHandler hook) =>
+            HookHandlers.Remove(hook.Name);
 
         #endregion
 
         #region Initialize
-
-        //public LuaEnvironment()
-        //{
-        //}
-
+        
         public LuaEnvironment(string[] directories)
         {
             Directories = directories;
@@ -52,15 +56,6 @@ namespace MyLua
 
         public bool Initialize()
         {
-            lock (Locker)
-            {
-                if (Lua != null)
-                {
-                    UnhookAll(); // Here enabled is already true since lua != null
-                    Dispose();
-                }
-            }
-
             Lua = new Lua() { UseTraceback = true };
             Lua.State.Encoding = Encoding.UTF8;
             Lua.LoadCLRPackage();
@@ -82,10 +77,12 @@ namespace MyLua
         {
             lock (Locker)
             {
-                if (!Lua.Enabled())
-                    return;
+                if (!Lua.IsEnabled())
+                    throw new ObjectDisposedException("Trying to dispose already disposed LuaEnivronment");
+                UnhookAll();
                 CallFunctionByName("OnLuaClose"); // There might not be such function.
                 ClearCommands();
+                //ClearHooks();
                 Lua.Dispose();
                 Lua.Disable();
             }
@@ -99,6 +96,14 @@ namespace MyLua
             foreach (var c in LuaCommands)
                 c.Dispose();
             LuaCommands.Clear();
+        }
+
+        #endregion
+        #region ClearHooks
+
+        public void ClearHooks()
+        {
+            HookHandlers.Clear();
         }
 
         #endregion
@@ -137,7 +142,7 @@ namespace MyLua
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (!oldLua.Enabled())
+                if (!oldLua.IsEnabled())
                     return null;
                 return Lua[name];
             }
@@ -151,7 +156,7 @@ namespace MyLua
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (!oldLua.Enabled())
+                if (!oldLua.IsEnabled())
                     return;
                 Lua[name] = o;
             }
@@ -170,17 +175,18 @@ namespace MyLua
 
         public object[] RunScript(string script, params object[] args)
         {
-            
             object[] result = null;
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (!oldLua.Enabled())
+                if (!oldLua.IsEnabled())
                     return null;
                 using (LuaFunction executeFunction = Get("execute") as LuaFunction)
                 {
                     if (executeFunction != null)
-                        result = CallFunction(executeFunction, script, args);
+                    {
+                        result = CallFunction(executeFunction, (new object[] { script }).Concat(args).ToArray());
+                    }
                     else
                     {
                         result = Lua.DoString(script);
@@ -200,7 +206,7 @@ namespace MyLua
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (!oldLua.Enabled())
+                if (!oldLua.IsEnabled())
                     return null;
                 return f.Call(args) ?? new object[0];
             }
@@ -214,7 +220,7 @@ namespace MyLua
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (!oldLua.Enabled())
+                if (!oldLua.IsEnabled())
                     return null;
                 using (LuaFunction f = Get(name) as LuaFunction)
                 {
@@ -227,6 +233,14 @@ namespace MyLua
         }
 
         #endregion
+        #region RaiseLuaHookException
+
+        internal void RaiseLuaHookException(string name, Exception e)
+        {
+            LuaHookException(name, e);
+        }
+
+        #endregion
         #region UpdateHooks
 
         public void UpdateHooks()
@@ -234,7 +248,7 @@ namespace MyLua
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (!oldLua.Enabled())
+                if (!oldLua.IsEnabled())
                     return;
                 foreach (ILuaHookHandler handler in HookHandlers.Values) // TODO: Lazy hook handler creation
                     handler.Update();
@@ -249,7 +263,7 @@ namespace MyLua
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (!oldLua.Enabled())
+                if (!oldLua.IsEnabled())
                     return;
                 HookHandlers[name].Update();
             }
@@ -263,7 +277,7 @@ namespace MyLua
             Lua oldLua = Lua;
             lock (Locker)
             {
-                if (!oldLua.Enabled())
+                if (!oldLua.IsEnabled())
                     return;
                 if (HookHandlers[name].Active)
                     HookHandlers[name].Disable();
@@ -292,7 +306,7 @@ namespace MyLua
             {
                 lock (Locker)
                 {
-                    if (!oldLua.Enabled())
+                    if (!oldLua.IsEnabled())
                         return;
                     CallFunction(f, args);
                     f.Dispose(); // BUG: Can cause AccessViolationException (read notes)

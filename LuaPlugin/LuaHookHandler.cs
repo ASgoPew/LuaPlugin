@@ -14,58 +14,7 @@ using TShockAPI.Hooks;
 
 namespace MyLua
 {
-    public class LuaHookHandler<T> : ILuaHookHandler
-    {
-        LuaEnvironment LuaEnv { get; set; }
-        public string Name { get; set; }
-        Action<LuaHookHandler<T>, bool?> Control { get; set; }
-        public T Handler { get; set; }
-        public bool Active { get; private set; }
-
-        public LuaHookHandler(LuaEnvironment luaEnv, string name, Action<LuaHookHandler<T>, bool?> control)
-        {
-            LuaEnv = luaEnv;
-            Name = name;
-            Control = control;
-        }
-
-        public void Invoke(params object[] args)
-        {
-            try
-            {
-                LuaEnv.CallFunctionByName(Name, args);
-            }
-            catch (Exception e)
-            {
-                Control.Invoke(this, false);
-                LuaEnv.Set(Name, null);
-                //LuaEnv.LuaException.Invoke(e);
-            }
-        }
-
-        public void Update()
-        {
-            LuaFunction f = LuaEnv.Get(Name) as LuaFunction;
-            if (f != null && !Active)
-                Enable();
-            else if (f == null && Active)
-                Disable();
-        }
-
-        public void Enable()
-        {
-            Active = true;
-            Control.Invoke(this, true);
-        }
-
-        public void Disable()
-        {
-            Control.Invoke(this, false);
-            Active = false;
-        }
-    }
-
-    public class LuaHookHandler2
+    /*public class LuaHookHandler2
     {
         LuaHookHandler<Action> h = new LuaHookHandler<Action>(null, "OnTick", (hook, state) =>
         {
@@ -130,34 +79,34 @@ namespace MyLua
         public HookResult OnHookWithResult(object arg0 = null, object arg1 = null)
         {
             throw new NotImplementedException("OTAPI.Hooks not implemented");
-            /*try
-            {
-                if (LuaPlugin.lua.GetFunction(name) != null)
-                {
-                    object[] result = LuaPlugin.lua.GetFunction(name).Call(arg0, arg1);
-                    if (result != null && result.Length == 1)
-                        return (bool)result[0] ? HookResult.Cancel : HookResult.Continue;
-                    else
-                    {
-                        //Unhook();
-                        //Console.WriteLine("Incorrect HookResult return: " + handlerFunctionName);
-                        return HookResult.Continue;
-                    }
-                }
-                else
-                {
-                    Unhook();
-                    Console.WriteLine("Stopped " + name);
-                    return HookResult.Continue;
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(name + " ERROR: " + e);
-                LuaPlugin.lua[name] = null;
-                Unhook();
-                return HookResult.Continue;
-            }*/
+            //try
+            //{
+            //    if (LuaPlugin.lua.GetFunction(name) != null)
+            //    {
+            //        object[] result = LuaPlugin.lua.GetFunction(name).Call(arg0, arg1);
+            //        if (result != null && result.Length == 1)
+            //            return (bool)result[0] ? HookResult.Cancel : HookResult.Continue;
+            //        else
+            //        {
+            //            //Unhook();
+            //            //Console.WriteLine("Incorrect HookResult return: " + handlerFunctionName);
+            //            return HookResult.Continue;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        Unhook();
+            //        Console.WriteLine("Stopped " + name);
+            //        return HookResult.Continue;
+            //    }
+            //}
+            //catch (Exception e)
+            //{
+            //    Console.WriteLine(name + " ERROR: " + e);
+            //    LuaPlugin.lua[name] = null;
+            //    Unhook();
+            //    return HookResult.Continue;
+            //}
         }
 
         public void Hook()
@@ -206,19 +155,17 @@ namespace MyLua
             //"OnProjectilePostKill"
         };
 
-        /*
-        case "On":
-            handler = new 
-            handlerControl = (Action<bool>)((on) => { if (on)  else  });
-            break;
+        //case "On":
+        //    handler = new 
+        //    handlerControl = (Action<bool>)((on) => { if (on)  else  });
+        //    break;
         
-        case "On":
-            handler = new HookHandler<EventArgs>((EventArgs args) => { OnHook(name, args); });
-            handlerControl = (Action<bool>)((on) => { if (on) ServerApi.Hooks.DropBossBag.Register(LuaPlugin.instance, handler); else ServerApi.Hooks.DropBossBag.Deregister(LuaPlugin.instance, handler); });
-            break;
-        */
+        //case "On":
+        //    handler = new HookHandler<EventArgs>((EventArgs args) => { OnHook(name, args); });
+        //    handlerControl = (Action<bool>)((on) => { if (on) ServerApi.Hooks.DropBossBag.Register(LuaPlugin.instance, handler); else ServerApi.Hooks.DropBossBag.Deregister(LuaPlugin.instance, handler); });
+        //    break;
 
-        /*public void Control(bool on)
+        public void Control(bool on)
         {
             switch (Name)
             {
@@ -527,7 +474,7 @@ namespace MyLua
                     LuaEnv.PrintError("Trying to create unknown hook!");
                     break;
             }
-        }*/
+        }
 
         public Action CreateAction()
         {
@@ -855,9 +802,9 @@ namespace MyLua
                     //handlerControl = (Action<bool>)((on) => { if (on) OTAPI.Hooks.Projectile.PreKill += handler; else OTAPI.Hooks.Projectile.PreKill -= handler; });
                     //break;
                 
-                /*case "OnProjectilePostKill":
-                    handler = new OTAPI.Hooks.Projectile.PostKilledHandler((Projectile p) => { OnHook(p); });
-                    break;*/
+                //case "OnProjectilePostKill":
+                //    handler = new OTAPI.Hooks.Projectile.PostKilledHandler((Projectile p) => { OnHook(p); });
+                //    break;
 
                 default:
                     Handler = null;
@@ -866,17 +813,9 @@ namespace MyLua
             }
         }
 
-        /*public void f(Terraria.Localization.NetworkText text, ref Microsoft.Xna.Framework.Color color, ref int igonrePlayer)
+        public void f(Terraria.Localization.NetworkText text, ref Microsoft.Xna.Framework.Color color, ref int igonrePlayer)
         {
             
-        }*/
-    }
-
-    public static class cl
-    {
-        public static void f(this LuaHookHandler2 hook, Terraria.Localization.NetworkText text, ref Microsoft.Xna.Framework.Color color, ref int igonrePlayer)
-        {
-
         }
-    }
+    }*/
 }

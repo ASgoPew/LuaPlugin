@@ -1,12 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿using MyLua;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TShockAPI;
 
-namespace MyLua
+namespace LuaPlugin
 {
     public class Config
     {
@@ -52,8 +54,15 @@ namespace MyLua
         {
             //if (DefaultLua != null && Environments.Count > 0 && !Environments.ContainsKey(DefaultLua))
 
+            if (Environments == null)
+                Environments = new Dictionary<string, LuaEnvironment>();
             foreach (var pair in Environments)
+            {
                 pair.Value.Name = pair.Key;
+                pair.Value.LuaHookException += (string name, Exception e) =>
+                    LuaPlugin.PrintError(TSPlayer.Server, pair.Value, e);
+                LuaHookManager.Initialize(pair.Value);
+            }
         }
 
         #endregion

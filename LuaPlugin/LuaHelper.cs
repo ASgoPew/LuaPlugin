@@ -10,7 +10,7 @@ using System.Diagnostics;
 using TShockAPI;
 using Terraria;
 
-namespace MyLua
+namespace LuaPlugin
 {
     public class LuaHelper
     {

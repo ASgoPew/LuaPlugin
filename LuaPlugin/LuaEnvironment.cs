@@ -18,9 +18,9 @@ using TShockAPI;
 
 namespace MyLua
 {
-    public class LuaEnvironment2 : IDisposable
+    public class LuaEnvironment2// : IDisposable
     {
-        public static int LastExceptionLuaIndex = -1;
+        /*public static int LastExceptionLuaIndex = -1;
 
         public int Index;
         private Lua Lua = null;
@@ -238,25 +238,25 @@ namespace MyLua
             }
         }
 
-        /*public void UpdateLua(TSPlayer player)
-        {
-            try
-            {
-                Lua oldLua = lua;
-                lock (locker)
-                {
-                    if (oldLua.useTraceback)
-                        return;
-                    lua["me"] = player;
-                    lua["defaultColor"] = defaultColor;
-                    //lua.DoString("debug.sethook(function() error('Lua script instructions amount has exceeded allowed value.') end, '', " + maxInstructionsCount.ToString() + ")");
-                }
-            }
-            catch (Exception e)
-            {
-                player.SendErrorMessage("Cannot update lua: " + e.Message);
-            }
-        }*/
+        //public void UpdateLua(TSPlayer player)
+        //{
+        //    try
+        //    {
+        //        Lua oldLua = lua;
+        //        lock (locker)
+        //        {
+        //            if (oldLua.useTraceback)
+        //                return;
+        //            lua["me"] = player;
+        //            lua["defaultColor"] = defaultColor;
+        //            //lua.DoString("debug.sethook(function() error('Lua script instructions amount has exceeded allowed value.') end, '', " + maxInstructionsCount.ToString() + ")");
+        //        }
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        player.SendErrorMessage("Cannot update lua: " + e.Message);
+        //    }
+        //}
 
         public void GenerateException()
         {
@@ -357,11 +357,11 @@ namespace MyLua
             }
         }
 
-        /*public void LuaLock(object o, LuaFunction f)
-        {
-            lock (o)
-                CallFunction(f, null, "LuaLock");
-        }*/
+        //public void LuaLock(object o, LuaFunction f)
+        //{
+        //    lock (o)
+        //        CallFunction(f, null, "LuaLock");
+        //}
 
         public string GetDebugTraceback()
         {
@@ -706,6 +706,6 @@ namespace MyLua
             }
             else
                 PrintError("No last exception found!");
-        }
+        }*/
     }
 }
