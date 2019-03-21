@@ -77,9 +77,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="LuaCommand.cs" />
     <Compile Include="LuaEnvironment.cs" />
     <Compile Include="LuaHelper.cs" />
-    <Compile Include="LuaHookHandler.cs" />
     <Compile Include="LuaHookManager.cs" />
     <Compile Include="LuaPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
