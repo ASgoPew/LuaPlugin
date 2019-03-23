@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -38,12 +39,6 @@ namespace MyLua
 
         public delegate void LuaHookExceptionD(string name, Exception e);
         public event LuaHookExceptionD LuaHookException;
-
-        public void AddHook(ILuaHookHandler hook) =>
-            HookHandlers.Add(hook.Name, hook);
-
-        public void RemoveHook(ILuaHookHandler hook) =>
-            HookHandlers.Remove(hook.Name);
 
         #endregion
 
@@ -86,6 +81,29 @@ namespace MyLua
                 Lua.Dispose();
                 Lua.Disable();
             }
+        }
+
+        #endregion
+        #region Hooks
+
+        public void AddHook(ILuaHookHandler hook) =>
+            HookHandlers.Add(hook.Name, hook);
+
+        public void RemoveHook(ILuaHookHandler hook) =>
+            HookHandlers.Remove(hook.Name);
+
+        public void AddEventHook(string name, Type eventType, string eventName, object eventInstance = null)
+        {
+            EventInfo hookEvent = eventType.GetEvent(eventName);
+            MethodInfo add = hookEvent.GetAddMethod();
+            MethodInfo remove = hookEvent.GetRemoveMethod();
+            AddHook(new LuaHookHandler<Delegate>(this, name, (hook, state) =>
+            {
+                if      (state ==  true)    add.Invoke(eventInstance, new object[] { hook.Handler });
+                else if (state == false) remove.Invoke(eventInstance, new object[] { hook.Handler });
+                else hook.Handler = Delegate.CreateDelegate(hookEvent.EventHandlerType, hook,
+                    hook.GetType().GetMethod("InvokeEventArgs"));
+            }));
         }
 
         #endregion

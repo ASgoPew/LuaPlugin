@@ -8,43 +8,46 @@ using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.Hooks;
-using MyLua;
 using System.ComponentModel;
+using System.Reflection;
 
 namespace LuaPlugin
 {
     public class LuaHookManager
     {
+        public static void AddHookHandlerHook<T>(LuaEnvironment luaEnv, string name, HandlerCollection<T> handlerCollection)
+            where T : EventArgs
+        {
+            luaEnv.AddHook(new LuaHookHandler<HookHandler<T>>(luaEnv, name, (hook, state) =>
+            {
+                if      (state ==  true) handlerCollection.Register(LuaPlugin.Instance, hook.Handler);
+                else if (state == false) handlerCollection.Deregister(LuaPlugin.Instance, hook.Handler);
+                else hook.Handler = (args) => hook.Invoke(args);
+            }));
+        }
+
+        public static void AddEventHandlerHook<T>(LuaEnvironment luaEnv, string name, ref HandlerList<T> handlerList)
+            where T : EventArgs
+        {
+            if (handlerList == null)
+                handlerList = new HandlerList<T>();
+            HandlerList<T> nonRefHandlerList = handlerList;
+            luaEnv.AddHook(new LuaHookHandler<EventHandler<T>>(luaEnv, name, (hook, state) =>
+            {
+                if (state == true) nonRefHandlerList += hook.Handler;
+                else if (state == false) nonRefHandlerList -= hook.Handler;
+                else hook.Handler = (sender, args) => hook.Invoke(args);
+            }));
+        }
+
         public static void Initialize(LuaEnvironment luaEnv)
         {
-            List<ILuaHookHandler> hooks = new List<ILuaHookHandler>
-            {
-                /*new LuaHookHandler<Action>(null, "OnTick", (hook, state) =>
-                {
-                    if      (state ==  true) Main.OnTick += hook.Handler;
-                    else if (state == false) Main.OnTick -= hook.Handler;
-                    else hook.Handler = () => hook.Invoke();
-                }),
-                new LuaHookHandler<HookHandler<EventArgs>>(null, "OnTick", (hook, state) =>
-                {
-                    if      (state ==  true) ServerApi.Hooks.GameInitialize.Register(null, hook.Handler);
-                    else if (state == false) ServerApi.Hooks.GameInitialize.Deregister(null, hook.Handler);
-                    else hook.Handler = (args) => hook.Invoke(args);
-                }),
-                new LuaHookHandler<AccountHooks.AccountCreateD>(null, "OnTick", (hook, state) =>
-                {
-                    if (state == true) AccountHooks.AccountCreate += hook.Handler;
-                    else if (state == false) AccountHooks.AccountCreate -= hook.Handler;
-                    else hook.Handler = (args) => hook.Invoke(args);
-                    typeof(AccountHooks).GetEvent("AccountCreate").AddEventHandler(hook, hook.Handler);
-                }),
-                new LuaHookHandler<EventHandler<GetDataHandlers.NewProjectileEventArgs>>(null, "asd", (hook, state) =>
-                {
-                    if (state == true) GetDataHandlers.NewProjectile += hook.Handler;
-                    else if (state == false) GetDataHandlers.NewProjectile -= hook.Handler;
-                    else hook.Handler = (sender, args) => hook.Invoke(args);
-                }),*/
+            AddHookHandlerHook(luaEnv, "OnGameUpdate", ServerApi.Hooks.GameUpdate);
+            AddEventHandlerHook(luaEnv, "OnPacketNewProjectile", ref GetDataHandlers.NewProjectile);
+            luaEnv.AddEventHook("OnPlayerChat", typeof(PlayerHooks), "PlayerChat");
 
+            /*List<ILuaHookHandler> hooks = new List<ILuaHookHandler>
+            {
                 new LuaHookHandler<Action>(luaEnv, "OnTick", (hook, state) =>
                 {
                     if      (state ==  true) Main.OnTick += hook.Handler;
@@ -604,7 +607,7 @@ namespace LuaPlugin
             };
 
             foreach (var hook in hooks)
-                luaEnv.AddHook(hook);
+                luaEnv.AddHook(hook);*/
         }
 
         /*public void AddEventHook<T>(LuaEnvironment luaEnv, string name, Type type, string eventName)

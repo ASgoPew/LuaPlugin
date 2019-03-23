@@ -10,7 +10,7 @@ using MyLua;
 namespace LuaPlugin
 {
     // LuaTable can be disposed!
-    public class LuaCommand : ILuaCommand
+    /*public class LuaCommand : ILuaCommand
     {
         private bool Disposed = false;
         public LuaFunction Function;
@@ -113,5 +113,5 @@ namespace LuaPlugin
         {
             return true;
         }
-    }
+    }*/
 }

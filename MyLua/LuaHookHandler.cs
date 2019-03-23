@@ -47,6 +47,9 @@ namespace MyLua
             }
         }
 
+        public void InvokeEventArgs(EventArgs args) =>
+            Invoke(args);
+
         public void Update()
         {
             LuaFunction f = LuaEnv.Get(Name) as LuaFunction;
