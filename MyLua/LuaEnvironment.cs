@@ -37,17 +37,14 @@ namespace MyLua
         private object Locker = new object();
         public Dictionary<string, object> Data = new Dictionary<string, object>();
 
-        public delegate void LuaHookExceptionD(string name, Exception e);
-        public event LuaHookExceptionD LuaHookException;
+        public delegate void LuaExceptionD(string name, Exception e);
+        public event LuaExceptionD LuaException;
+
+        public Lua GetState() => Lua;
 
         #endregion
 
         #region Initialize
-        
-        public LuaEnvironment(string[] directories)
-        {
-            Directories = directories;
-        }
 
         public bool Initialize()
         {
@@ -77,7 +74,6 @@ namespace MyLua
                 UnhookAll();
                 CallFunctionByName("OnLuaClose"); // There might not be such function.
                 ClearCommands();
-                //ClearHooks();
                 Lua.Dispose();
                 Lua.Disable();
             }
@@ -99,10 +95,18 @@ namespace MyLua
             MethodInfo remove = hookEvent.GetRemoveMethod();
             AddHook(new LuaHookHandler<Delegate>(this, name, (hook, state) =>
             {
-                if      (state ==  true)    add.Invoke(eventInstance, new object[] { hook.Handler });
+                if (state == true) add.Invoke(eventInstance, new object[] { hook.Handler });
                 else if (state == false) remove.Invoke(eventInstance, new object[] { hook.Handler });
-                else hook.Handler = Delegate.CreateDelegate(hookEvent.EventHandlerType, hook,
-                    hook.GetType().GetMethod("InvokeEventArgs"));
+                else
+                {
+                    ParameterInfo[] parameters = hookEvent.EventHandlerType.GetMethod("Invoke").GetParameters();
+                    MethodInfo invoke = hook.GetType().GetMethods().Where(mi => mi.Name == "InvokeGeneric" && mi.GetParameters().Length == parameters.Length).First();
+                    if (parameters.Length > 0)
+                        hook.Handler = Delegate.CreateDelegate(hookEvent.EventHandlerType, hook,
+                            invoke.MakeGenericMethod(parameters.Select(p => p.ParameterType).ToArray()));
+                    else
+                        hook.Handler = Delegate.CreateDelegate(hookEvent.EventHandlerType, hook, invoke);
+                }
             }));
         }
 
@@ -114,14 +118,6 @@ namespace MyLua
             foreach (var c in LuaCommands)
                 c.Dispose();
             LuaCommands.Clear();
-        }
-
-        #endregion
-        #region ClearHooks
-
-        public void ClearHooks()
-        {
-            HookHandlers.Clear();
         }
 
         #endregion
@@ -251,11 +247,11 @@ namespace MyLua
         }
 
         #endregion
-        #region RaiseLuaHookException
+        #region RaiseLuaException
 
-        internal void RaiseLuaHookException(string name, Exception e)
+        public void RaiseLuaException(string name, Exception e)
         {
-            LuaHookException(name, e);
+            LuaException(name, e);
         }
 
         #endregion
@@ -333,6 +329,37 @@ namespace MyLua
         }
 
         #endregion
+        #region ProcessText
+
+        public string ProcessText(string text, string pattern, params object[] args)
+        {
+            int matchEndIndex = 0;
+            string result = "";
+
+            foreach (Match match in Regex.Matches(text, pattern))
+            {
+                result = result + text.Substring(matchEndIndex, match.Index - matchEndIndex);
+                matchEndIndex = match.Index + match.Value.Length;
+                string script = match.Groups[1].Value;
+                object[] executionResult = RunScript("return " + script, args);
+                if (executionResult != null && executionResult.Length > 0)
+                    for (int i = 0; i < executionResult.Length; i++)
+                        result = result + (i > 0 ? ", " : "") + (executionResult[i]?.ToString() ?? "nil");
+            }
+            return result + text.Substring(matchEndIndex, text.Length - matchEndIndex);
+        }
+
+        #endregion
+        #region GenerateFunction
+
+        public LuaFunction GenerateFunction(string code, string[] parameterNames = null, params object[] args)
+        {
+            code = $"return function({(parameterNames != null ? string.Join(",", parameterNames) : "")})" + code + ";end";
+            object[] executionResult = RunScript(code, args);
+            return executionResult?[0] as LuaFunction;
+        }
+
+        #endregion
         #region ResetFromLua
 
         public void ResetFromLua()
@@ -350,6 +377,7 @@ namespace MyLua
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
                 f.Call(ms, bw);
+                f.Dispose();
             }
         }
 
@@ -362,7 +390,81 @@ namespace MyLua
             using (BinaryReader br = new BinaryReader(ms))
             {
                 f.Call(ms, br);
+                f.Dispose();
             }
+        }
+
+        #endregion
+        #region SharpShow
+
+        public string SharpShow(object o)
+        {
+            Type type = o.GetType();
+            bool typeFlag = false;
+            if (type == typeof(ProxyType))
+            {
+                typeFlag = true;
+                type = ((ProxyType)o).UnderlyingSystemType;
+            }
+            string result = typeFlag ? type.Name + " CLASS:" : type.Name + " OBJECT:";
+
+            if (type.GetConstructors().Length > 0)
+                result += "\nCONSTRUCTORS:";
+            foreach (var constructor in type.GetConstructors())
+                if (constructor.IsPublic)
+                {
+                    string parameters = "";
+                    var ps = constructor.GetParameters();
+                    for (int i = 0; i < ps.Length; i++)
+                    {
+                        parameters += ps[i].ParameterType.Name + " " + ps[i].Name;
+                        if (i != ps.Length - 1)
+                            parameters += ", ";
+                    }
+                    result += constructor.IsStatic ? "\n   (static) " : "\n   ";
+                    result += constructor.Name + " (" + parameters + ")";
+                }
+
+            if (type.GetMethods().Length > 0)
+                result += "\nMETHODS:";
+            foreach (var method in type.GetMethods())
+                if (method.IsPublic)
+                {
+                    string parameters = "";
+                    var ps = method.GetParameters();
+                    for (int i = 0; i < ps.Length; i++)
+                    {
+                        parameters += ps[i].ParameterType.Name + " " + ps[i].Name;
+                        if (i != ps.Length - 1)
+                            parameters += ", ";
+                    }
+                    result += method.IsStatic ? "\n   (static) " : "\n   ";
+                    result += method.ReturnType.Name + new string(' ', 10 - (method.ReturnType.Name.Length % 10)) + method.Name + " (" + parameters + ")";
+                }
+
+            if (type.GetEvents().Length > 0)
+                result += "\nEVENTS:";
+            foreach (var e in type.GetEvents())
+                result += "\n   " + e.Name;
+
+            if (type.GetFields().Length > 0)
+                result += "\nFIELDS:";
+            if (typeFlag)
+            {
+                foreach (var field in type.GetFields())
+                    if (field.IsPublic)
+                    {
+                        if (field.IsStatic)
+                            result += "\n   (static) " + field.Name + ": " + new string(' ', 30 - (field.Name.Length % 30)) + field.GetValue(null) ?? "null";
+                        else
+                            result += "\n   " + field.Name;
+                    }
+            }
+            else
+                foreach (var field in type.GetFields())
+                    if (field.IsPublic)
+                        result += "\n   " + field.Name + ": " + new string(' ', 30 - (field.Name.Length % 30)) + field.GetValue(o) ?? "null";
+            return result;
         }
 
         #endregion

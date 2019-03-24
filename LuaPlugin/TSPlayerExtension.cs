@@ -8,14 +8,16 @@ namespace LuaPlugin
     {
         public static LuaEnvironment LuaEnv(this TSPlayer player)
         {
-            if (player.HasPermission(Config.ControlPermission))
+            if (player.HasPermission(LuaConfig.ControlPermission))
             {
                 string env = LuaPlugin.LuaEnv[player.Index >= 0 ? player.Index : Main.maxPlayers];
                 if (env != null)
-                    return Config.Environments[env];
+                    return LuaConfig.Environments[env];
+                else if (LuaConfig.DefaultLua != null)
+                    return LuaConfig.Environments[LuaConfig.DefaultLua];
             }
-            else if (Config.UntrustedLua != null)
-                return Config.Environments[Config.UntrustedLua];
+            else if (LuaConfig.UntrustedLua != null && player.HasPermission(LuaConfig.ExecutePermission))
+                return LuaConfig.Environments[LuaConfig.UntrustedLua];
             return null;
         }
     }

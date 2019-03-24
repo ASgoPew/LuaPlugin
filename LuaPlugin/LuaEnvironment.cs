@@ -16,7 +16,7 @@ using Terraria.Localization;
 using TerrariaApi.Server;
 using TShockAPI;
 
-namespace MyLua
+namespace LuaPlugin
 {
     public class LuaEnvironment2// : IDisposable
     {

@@ -41,14 +41,15 @@ namespace MyLua
             }
             catch (Exception e)
             {
-                Control.Invoke(this, false);
+                Disable();
                 LuaEnv.Set(Name, null);
-                LuaEnv.RaiseLuaHookException(Name, e);
+                LuaEnv.RaiseLuaException($"Hook: {Name}", e);
             }
         }
 
-        public void InvokeEventArgs(EventArgs args) =>
-            Invoke(args);
+        public void InvokeGeneric() => Invoke();
+        public void InvokeGeneric<U>(U args) => Invoke(args);
+        public void InvokeGeneric<U, V>(U arg0, V arg1) => Invoke(arg0, arg1);
 
         public void Update()
         {

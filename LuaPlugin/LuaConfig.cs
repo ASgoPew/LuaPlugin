@@ -10,7 +10,7 @@ using TShockAPI;
 
 namespace LuaPlugin
 {
-    public class Config
+    public class LuaConfig
     {
         [JsonProperty("command_specifier")]
         public static string CommandSpecifier = ";";
@@ -30,7 +30,7 @@ namespace LuaPlugin
         public static void Save()
         {
             string path = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "lua_config.json");
-            File.WriteAllText(path, JsonConvert.SerializeObject(new Config(), Formatting.Indented));
+            File.WriteAllText(path, JsonConvert.SerializeObject(new LuaConfig(), Formatting.Indented));
         }
 
         #endregion
@@ -40,7 +40,7 @@ namespace LuaPlugin
         {
             string path = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "lua_config.json");
             if (File.Exists(path))
-                JsonConvert.DeserializeObject<Config>(File.ReadAllText(path));
+                JsonConvert.DeserializeObject<LuaConfig>(File.ReadAllText(path));
             else
                 Save();
 
@@ -59,7 +59,7 @@ namespace LuaPlugin
             foreach (var pair in Environments)
             {
                 pair.Value.Name = pair.Key;
-                pair.Value.LuaHookException += (string name, Exception e) =>
+                pair.Value.LuaException += (string name, Exception e) =>
                     LuaPlugin.PrintError(TSPlayer.Server, pair.Value, e);
                 LuaHookManager.Initialize(pair.Value);
             }

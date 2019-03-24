@@ -39,10 +39,7 @@ namespace LuaPlugin
         {
             Instance = this;
 
-            Config.Load();
-
-            for (int i = 0; i < LuaEnv.Length; i++)
-                LuaEnv[i] = Config.DefaultLua;
+            LuaConfig.Load();
         }
 
         public override void Initialize()
@@ -50,7 +47,7 @@ namespace LuaPlugin
             ServerApi.Hooks.ServerChat.Register(this, OnServerChat);
             ServerApi.Hooks.ServerCommand.Register(this, OnServerCommand);
 
-            Commands.ChatCommands.Add(new Command(new List<string> { "lua.contol" }, LuaChatCommand, "lua")
+            Commands.ChatCommands.Add(new Command(new List<string> { "lua.contol" }, LuaCommand, "lua")
             {
                 AllowServer = true,
                 HelpText = "Lua control"
@@ -74,68 +71,12 @@ namespace LuaPlugin
         }
 
         #endregion
-        #region Helper data and methods
-
-        //public delegate void handler0();
-        //public delegate void handler1(EventArgs args);
-        //public delegate void handler2(object sender, EventArgs args);
-
-        //public static handler0 CreateDelegate0(LuaFunction f)
-        //{
-        //    return () => { f.Call(); };
-        //}
-        //public static handler1 CreateDelegate1(LuaFunction f)
-        //{
-        //    return (arg1) => { f.Call(arg1); };
-        //}
-        //public static handler2 CreateDelegate2(LuaFunction f)
-        //{
-        //    return (arg1, arg2) => { f.Call(arg1, arg2); };
-        //    //lua.RegisterLuaDelegateType
-        //}
-
-        //public static HookHandler<EventArgs> CreateHookHandler(LuaFunction f)
-        //{
-        //    return (arg1) => { f.Call(arg1); };
-        //}
-
-        // Requires dynamic generic Action generation
-        /*public static object CreateAction(LuaFunction f, Type[] args)
-        {
-            switch(args.Length)
-            {
-                case 0:
-                    return new Action(() => { f.Call(); });
-                    break;
-                case 1:
-                    return new Action<object>((arg0) => { f.Call(arg0); });
-                    break;
-                case 2:
-                    return new Action<object>((arg0) => { f.Call(arg0); });
-                    break;
-            }
-            return null;
-        }*/
-
-        //public static Action CreateAction0(LuaFunction f)
-        //{
-        //    return () => { f.Call(); };
-        //}
-        //public static Action<object> CreateAction1(LuaFunction f)
-        //{
-        //    return (arg1) => { f.Call(arg1); };
-        //}
-        /*public static Action<BinaryWriter> CreateWriter(LuaFunction f)
-        {
-            return (bw) => { f.Call(bw); };
-        }*/
-        #endregion
         #region Hook handlers
 
         public static void OnServerChat(ServerChatEventArgs args)
         {
             TSPlayer player = TShock.Players[args.Who];
-            if (!player.HasPermission(Config.ExecutePermission) || args.Handled)
+            if (!player.HasPermission(LuaConfig.ExecutePermission) || args.Handled)
                 return;
             args.Handled = CheckLuaInput(player, args.Text);
         }
@@ -150,9 +91,9 @@ namespace LuaPlugin
         public static bool CheckLuaInput(TSPlayer player, string text)
         {
             LuaEnvironment luaEnv = player.LuaEnv();
-            if (text.StartsWith(Config.CommandSpecifier) && luaEnv != null)
+            if (text.StartsWith(LuaConfig.CommandSpecifier) && luaEnv != null)
             {
-                RunLua(player, luaEnv, text.Substring(Config.CommandSpecifier.Length));
+                RunLua(player, luaEnv, text.Substring(LuaConfig.CommandSpecifier.Length));
                 return true;
             }
             return false;
@@ -174,13 +115,13 @@ namespace LuaPlugin
                 PrintError(player, luaEnv, e);
             }
 
-            if (player.HasPermission(Config.ControlPermission))
+            if (player.HasPermission(LuaConfig.ControlPermission))
                 luaEnv.UpdateHooks();
         }
 
         public static void InitializeEnvironments(TSPlayer player)
         {
-            foreach (var pair in Config.Environments)
+            foreach (var pair in LuaConfig.Environments)
                 if (!InitializeEnvironment(pair.Value, player))
                     break;
         }
@@ -201,7 +142,7 @@ namespace LuaPlugin
 
         public static void DisposeEnvironments(TSPlayer player)
         {
-            foreach (var pair in Config.Environments)
+            foreach (var pair in LuaConfig.Environments)
                 DisposeEnvironment(pair.Value, player);
         }
 
@@ -220,9 +161,9 @@ namespace LuaPlugin
         }
 
         #endregion
-        #region Commands
+        #region LuaCommand
 
-        public static void LuaChatCommand(CommandArgs args)
+        public static void LuaCommand(CommandArgs args)
         {
             if (args.Parameters.Count == 0)
             {
@@ -263,7 +204,7 @@ namespace LuaPlugin
             {
                 if (args.Parameters[1].ToLower() == "all")
                 {
-                    foreach (var pair in Config.Environments)
+                    foreach (var pair in LuaConfig.Environments)
                     {
                         if (!DisposeEnvironment(pair.Value, args.Player))
                             return;
@@ -274,12 +215,12 @@ namespace LuaPlugin
                     return;
                 }
 
-                if (!Config.Environments.ContainsKey(args.Parameters[1]))
+                if (!LuaConfig.Environments.ContainsKey(args.Parameters[1]))
                 {
                     args.Player.SendErrorMessage("No such environment.");
                     return;
                 }
-                LuaEnvironment lua = Config.Environments[args.Parameters[1]];
+                LuaEnvironment lua = LuaConfig.Environments[args.Parameters[1]];
                 if (!DisposeEnvironment(lua, args.Player))
                     return;
                 if (!InitializeEnvironment(lua, args.Player))
@@ -295,7 +236,7 @@ namespace LuaPlugin
                 args.Player.SendErrorMessage("Usage: /lua select <lua index>");
                 return;
             }
-            else if (!Config.Environments.ContainsKey(args.Parameters[1]))
+            else if (!LuaConfig.Environments.ContainsKey(args.Parameters[1]))
             {
                 args.Player.SendErrorMessage("No such environment.");
                 return;
@@ -315,6 +256,7 @@ namespace LuaPlugin
         }
 
         #endregion
+        #region GetData
 
         public static object GetData(string key)
         {
@@ -326,11 +268,17 @@ namespace LuaPlugin
             }
         }
 
+        #endregion
+        #region SetData
+
         public static void SetData(string key, object value)
         {
             lock (Data)
                 Data[key] = value;
         }
+
+        #endregion
+        #region PrintError
 
         public static void PrintError(TSPlayer player, LuaEnvironment luaEnv, Exception e)
         {
@@ -345,5 +293,7 @@ namespace LuaPlugin
                 player.SendErrorMessage($"Error at perror: {e2}");
             }
         }
+
+        #endregion
     }
 }

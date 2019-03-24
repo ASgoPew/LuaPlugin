@@ -10,7 +10,7 @@ using MyLua;
 namespace LuaPlugin
 {
     // LuaTable can be disposed!
-    /*public class LuaCommand : ILuaCommand
+    public class LuaCommand : ILuaCommand
     {
         private bool Disposed = false;
         public LuaFunction Function;
@@ -23,6 +23,7 @@ namespace LuaPlugin
             this.Function = function;
             this.LuaEnv = luaEnv;
             this.Lua = luaEnv.GetState(); // TODO: Changing f might crash on Dispose, since new f can have different interpreter
+
             string[] names;
             if (namesObject.GetType() == typeof(LuaTable))
             {
@@ -38,9 +39,15 @@ namespace LuaPlugin
                 names = new string[1] { (string)namesObject };
             else
             {
-                luaEnv.PrintError("LuaCommand.LuaCommand(LuaEnvironment luaEnv, object names_object, object permission_object, LuaTable parameters, LuaFunction f): Invalid parameters");
+                luaEnv.RaiseLuaException($"Command: <unknown>", new ArgumentException("LuaCommand.LuaCommand(LuaEnvironment luaEnv, object names_object, object permission_object, LuaTable parameters, LuaFunction f): Invalid name parameter"));
                 return;
             }
+            if (names.Length == 0)
+            {
+                luaEnv.RaiseLuaException($"Command: <unknown>", new ArgumentException("LuaCommand.LuaCommand(LuaEnvironment luaEnv, object names_object, object permission_object, LuaTable parameters, LuaFunction f): Invalid name parameter"));
+                return;
+            }
+
             List<string> permissions = new List<string>();
             if (permissionObject.GetType() == typeof(LuaTable))
             {
@@ -52,10 +59,10 @@ namespace LuaPlugin
                 permissions.Add((string)permissionObject);
             else
             {
-                luaEnv.PrintError("LuaCommand.LuaCommand(LuaEnvironment luaEnv, object names_object, object permission_object, LuaTable parameters, LuaFunction f): Invalid parameters");
+                luaEnv.RaiseLuaException($"Command: {names[0]}", new ArgumentException("LuaCommand.LuaCommand(LuaEnvironment luaEnv, object names_object, object permission_object, LuaTable parameters, LuaFunction f): Invalid permission parameter"));
                 return;
             }
-            bool allowServer = (bool)(parameters["AllowServer"] ?? false);
+            bool allowServer = (bool)(parameters["AllowServer"] ?? true);
             string helpText = (string)(parameters["HelpText"] ?? "Temporarily command");
             bool doLog = (bool)(parameters["DoLog"] ?? false);
             this.Cmd = new Command(permissions, Invoke, names)
@@ -68,19 +75,14 @@ namespace LuaPlugin
             luaEnv.LuaCommands.Add(this);
         }
 
-        public void Dispose() =>
-            Dispose(true);
-
-        public void Dispose(bool removeFromList = true)
+        public void Dispose()
         {
             if (Disposed)
                 return;
             Disposed = true;
 
             Commands.ChatCommands.Remove(Cmd);
-            if (removeFromList)
-                LuaEnv.LuaCommands.Remove(this);
-            if (!Lua.UseTraceback) // WILL THIS CRASH?
+            if (Lua.IsEnabled()) // WILL THIS CRASH?
                 Function.Dispose();
             Function = null;
             LuaEnv = null;
@@ -92,19 +94,14 @@ namespace LuaPlugin
         {
             if (Disposed)
             {
-                LuaEnv.PrintError("LuaCommand " + Cmd.Name + " is already disposed but trying to invoke it.");
+                LuaEnv.RaiseLuaException($"Command: {Cmd.Name}", new ArgumentException("LuaCommand is already disposed but trying to invoke it."));
                 return;
             }
-            if (!Lua.UseTraceback)
-            {
-                object oldSource = LuaEnv.Data["source"];
-                LuaEnv.Data["sourse"] = this;
-                LuaEnv.CallFunction(Function, null, "LuaCommand.Invoke", args);
-                LuaEnv.Data["source"] = oldSource;
-            }
+            if (Lua.IsEnabled())
+                LuaEnv.CallFunction(Function, args);
             else
             {
-                LuaEnv.PrintError("Trying to invoke LuaCommand " + Cmd.Name + " while corresponding lua instance is already disposed.");
+                LuaEnv.RaiseLuaException($"Command: {Cmd.Name}", new ArgumentException("Trying to invoke LuaCommand while corresponding lua instance is already disposed."));
                 Dispose();
             }
         }
@@ -113,5 +110,5 @@ namespace LuaPlugin
         {
             return true;
         }
-    }*/
+    }
 }

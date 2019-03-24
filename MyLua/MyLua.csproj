@@ -60,7 +60,6 @@
     <Compile Include="LuaHookHandler.cs" />
     <Compile Include="LuaDatabase.cs" />
     <Compile Include="LuaEnvironment.cs" />
-    <Compile Include="LuaHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
