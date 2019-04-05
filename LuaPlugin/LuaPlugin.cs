@@ -47,7 +47,7 @@ namespace LuaPlugin
             ServerApi.Hooks.ServerChat.Register(this, OnServerChat);
             ServerApi.Hooks.ServerCommand.Register(this, OnServerCommand);
 
-            Commands.ChatCommands.Add(new Command(new List<string> { "lua.contol" }, LuaCommand, "lua")
+            Commands.ChatCommands.Add(new Command(new List<string> { LuaConfig.ControlPermission }, LuaCommand, "lua")
             {
                 AllowServer = true,
                 HelpText = "Lua control"
@@ -130,7 +130,7 @@ namespace LuaPlugin
         {
             try
             {
-                luaEnv.Initialize();
+                luaEnv.Initialize(player);
                 return true;
             }
             catch (Exception e)
@@ -200,7 +200,8 @@ namespace LuaPlugin
                 if (!InitializeEnvironment(lua, args.Player))
                     return;
                 args.Player.SendSuccessMessage($"Lua[{lua.Name}] has been reset.");
-            } else if (args.Parameters.Count == 2)
+            }
+            else if (args.Parameters.Count == 2)
             {
                 if (args.Parameters[1].ToLower() == "all")
                 {

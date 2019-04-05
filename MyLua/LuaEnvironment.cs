@@ -32,7 +32,6 @@ namespace MyLua
 
         private Lua Lua;
         private Dictionary<string, ILuaHookHandler> HookHandlers = new Dictionary<string, ILuaHookHandler>();
-        public Exception LastException = null;
         public List<ILuaCommand> LuaCommands = new List<ILuaCommand>();
         private object Locker = new object();
         public Dictionary<string, object> Data = new Dictionary<string, object>();
@@ -46,14 +45,14 @@ namespace MyLua
 
         #region Initialize
 
-        public bool Initialize()
+        public bool Initialize(object me)
         {
             Lua = new Lua() { UseTraceback = true };
             Lua.State.Encoding = Encoding.UTF8;
             Lua.LoadCLRPackage();
             Lua["env"] = this;
 
-            if (!ReadEnvironment())
+            if (!ReadEnvironment(me))
                 return false;
 
             CallFunctionByName("OnLuaInit"); // There might not be such function.
@@ -72,7 +71,14 @@ namespace MyLua
                 if (!Lua.IsEnabled())
                     throw new ObjectDisposedException("Trying to dispose already disposed LuaEnivronment");
                 UnhookAll();
-                CallFunctionByName("OnLuaClose"); // There might not be such function.
+                try
+                {
+                    CallFunctionByName("OnLuaClose"); // There might not be such function.
+                }
+                catch (Exception e)
+                {
+                    RaiseLuaException($"OnLuaClose", e);
+                }
                 ClearCommands();
                 Lua.Dispose();
                 Lua.Disable();
@@ -123,7 +129,7 @@ namespace MyLua
         #endregion
         #region ReadEnvironment
 
-        public bool ReadEnvironment()
+        public bool ReadEnvironment(object me)
         {
             List<string> scripts = new List<string>();
             foreach (string dir in Directories)
@@ -142,7 +148,7 @@ namespace MyLua
             {
                 string filename = script.Replace(@"\", @"/");
                 Console.WriteLine("\t" + filename);
-                if (RunScript($"dofile('{filename}', '{filename}')", null, $"ReadLuaEnvironment", true) == null)
+                if (RunScript($"dofile('{filename}', '{filename}')", me, $"ReadLuaEnvironment", true) == null)
                     return false;
             }
             return true;
@@ -318,12 +324,19 @@ namespace MyLua
             Lua oldLua = Lua;
             Task.Delay(milliseconds).ContinueWith(_ =>
             {
-                lock (Locker)
+                try
                 {
-                    if (!oldLua.IsEnabled())
-                        return;
-                    CallFunction(f, args);
-                    f.Dispose(); // BUG: Can cause AccessViolationException (read notes)
+                    lock (Locker)
+                    {
+                        if (!oldLua.IsEnabled())
+                            return;
+                        CallFunction(f, args);
+                        f.Dispose(); // BUG: Can cause AccessViolationException (read notes)
+                    }
+                }
+                catch (Exception e)
+                {
+                    RaiseLuaException($"Delay({milliseconds})", e);
                 }
             });
         }
@@ -365,7 +378,7 @@ namespace MyLua
         public void ResetFromLua()
         {
             // Delay for 1 millisecond to run this code in another thread
-            Task.Delay(1).ContinueWith(_ => Initialize());
+            Task.Delay(1).ContinueWith(_ => Initialize(Get("me")));
         }
 
         #endregion
