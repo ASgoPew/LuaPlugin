@@ -23,7 +23,7 @@ namespace MyLua
     {
         #region Data
 
-        public static bool UseTraceback = true;
+        public static bool UseTraceback = false;
 
         [JsonProperty("name")]
         public string Name;
@@ -47,10 +47,13 @@ namespace MyLua
 
         public bool Initialize(object me)
         {
-            Lua = new Lua() { UseTraceback = true };
-            Lua.State.Encoding = Encoding.UTF8;
-            Lua.LoadCLRPackage();
-            Lua["env"] = this;
+            //lock (Locker)
+            //{
+                Lua = new Lua() { UseTraceback = UseTraceback };
+                Lua.State.Encoding = Encoding.UTF8;
+                Lua.LoadCLRPackage();
+                Lua["env"] = this;
+            //}
 
             if (!ReadEnvironment(me))
                 return false;
