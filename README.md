@@ -11,7 +11,7 @@ To install the plugin you need to do this:
 * Install [Visual C++ Redistributable 2015 (x86)](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
 * Add lua54.dll, KeraLua.dll, NLua.dll, MyLua.dll from acrhive to server root path (near TerrariaServer.exe).
 * Add ServerPlugins/LuaPlugin.dll from archive to ServerPlugins directory.
-[*] Highly recommended to add LuaScripts folder from archive to server root path (at least at first).
+* Highly recommended to add LuaScripts folder from archive to server root path (at least at first).
 
 Then run the server and it will create iron_python_config.json, where you probably want to write something like this:
 ```json
