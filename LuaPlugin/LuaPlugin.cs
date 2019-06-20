@@ -283,18 +283,16 @@ namespace LuaPlugin
 
         public static void PrintError(TSPlayer player, LuaEnvironment luaEnv, Exception e)
         {
-            /*try
+            try
             {
                 if (luaEnv.CallFunctionByName("perror", e) == null)
                     player.SendErrorMessage(e.ToString());
             }
             catch (Exception e2)
             {
-                player.SendErrorMessage(e.ToString());
                 player.SendErrorMessage($"Error at perror: {e2}");
-            }*/
-            player.SendErrorMessage(e.ToString());
-            TShock.Log.ConsoleError(e.ToString());
+                player.SendErrorMessage(e.ToString());
+            }
         }
 
         #endregion

@@ -13,11 +13,11 @@ namespace LuaPlugin
                 string env = LuaPlugin.LuaEnv[player.Index >= 0 ? player.Index : Main.maxPlayers];
                 if (env != null)
                     return LuaConfig.Environments[env];
-                else if (LuaConfig.DefaultLua != null)
-                    return LuaConfig.Environments[LuaConfig.DefaultLua];
+                else if (LuaConfig.DefaultEnvironment != null)
+                    return LuaConfig.Environments[LuaConfig.DefaultEnvironment];
             }
-            else if (LuaConfig.UntrustedLua != null && player.HasPermission(LuaConfig.ExecutePermission))
-                return LuaConfig.Environments[LuaConfig.UntrustedLua];
+            else if (LuaConfig.UntrustedEnvironment != null && player.HasPermission(LuaConfig.ExecutePermission))
+                return LuaConfig.Environments[LuaConfig.UntrustedEnvironment];
             return null;
         }
     }

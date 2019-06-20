@@ -23,18 +23,22 @@ namespace MyLua
     {
         #region Data
 
-        public static bool UseTraceback = false;
+        [JsonIgnore]
+        public static bool UseTraceback;
 
-        [JsonProperty("name")]
+        [JsonIgnore]
         public string Name;
         [JsonProperty("directories")]
         public string[] Directories;
 
+        [JsonIgnore]
+        public List<ILuaCommand> LuaCommands = new List<ILuaCommand>();
+        [JsonIgnore]
+        public Dictionary<string, object> Data = new Dictionary<string, object>();
+
         private Lua Lua;
         private Dictionary<string, ILuaHookHandler> HookHandlers = new Dictionary<string, ILuaHookHandler>();
-        public List<ILuaCommand> LuaCommands = new List<ILuaCommand>();
         private object Locker = new object();
-        public Dictionary<string, object> Data = new Dictionary<string, object>();
 
         public delegate void LuaExceptionD(string name, Exception e);
         public event LuaExceptionD LuaException;

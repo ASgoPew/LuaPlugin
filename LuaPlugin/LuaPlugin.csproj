@@ -48,7 +48,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\MyLua\_BuildResult\MyLua.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>_References\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -79,7 +79,6 @@
   <ItemGroup>
     <Compile Include="LuaConfig.cs" />
     <Compile Include="LuaCommand.cs" />
-    <Compile Include="LuaEnvironment.cs" />
     <Compile Include="LuaHelper.cs" />
     <Compile Include="LuaHookManager.cs" />
     <Compile Include="LuaPlugin.cs" />
