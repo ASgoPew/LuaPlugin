@@ -2,7 +2,7 @@
 ![](ConsoleExample.gif)
 
 ## About
-This plugin allows you to use NLua for writing and executing scripts for your TShock server.
+This plugin allows you to use Lua for writing and executing scripts for your TShock server.
 You can also run scripts from console or chat for debug purposes.
 
 ## Installing
