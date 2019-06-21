@@ -4,6 +4,8 @@
 ## About
 This plugin allows you to use Lua for writing and executing scripts for your TShock server.
 You can also run scripts from console or chat for debug purposes.
+Lua is a very fast, powerful and flexible scripting language. It is one of the fastest
+scripting languages in the world! Although lua can be multi-threaded this plugin provides single-threaded lua only.
 
 ## Installing
 This plugin is for TShock version 4.3.26 and uses Newtonsoft.Json version 10.
