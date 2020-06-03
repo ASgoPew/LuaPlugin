@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -488,5 +489,45 @@ namespace MyLua
         }
 
         #endregion
+        #region LuaHook
+
+        public void LuaHook(dynamic handlerCollection, LuaFunction f)
+        {
+            string hcname = handlerCollection.ToString();
+            if (hcname.StartsWith("TShockAPI.HandlerList"))
+            {
+                
+            } else if (hcname.StartsWith("TerrariaApi.Server.HandlerCollection"))
+            {
+
+            } else if (handlerCollection.GetType().ToString() == "<type 'BoundEvent'>")
+            {
+
+            }
+        }
+
+        #endregion
+        #region CreateAction
+
+        public object CreateAction(LuaFunction f, Type[] parameterTypes)
+        {
+            DynamicMethod squareIt = new DynamicMethod("SquareIt", typeof(long), parameterTypes, typeof(LuaDelegate));
+
+            ILGenerator il = squareIt.GetILGenerator();
+            for (int i = 0; i < parameterTypes.Length; i++)
+                il.Emit(OpCodes.Ldarg_S, i);
+            //il.Emit(OpCodes.Call, );
+            il.Emit(OpCodes.Ret);
+
+            return squareIt.CreateDelegate(typeof(Action<>).MakeGenericType(parameterTypes));
+        }
+
+        #endregion
+    }
+
+    public class LuaDelegate
+    {
+        LuaFunction f;
+        //public void Invoke(T arg0)
     }
 }

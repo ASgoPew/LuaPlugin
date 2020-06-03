@@ -88,7 +88,7 @@ namespace LuaPlugin
             AddHookHandlerHook(luaEnv, "OnServerCommand", ServerApi.Hooks.ServerCommand);
             AddHookHandlerHook(luaEnv, "OnServerConnect", ServerApi.Hooks.ServerConnect);
             AddHookHandlerHook(luaEnv, "OnServerJoin", ServerApi.Hooks.ServerJoin);
-            AddHookHandlerHook(luaEnv, "ServerLeave", ServerApi.Hooks.ServerLeave);
+            AddHookHandlerHook(luaEnv, "OnServerLeave", ServerApi.Hooks.ServerLeave);
             AddHookHandlerHook(luaEnv, "OnServerSocketReset", ServerApi.Hooks.ServerSocketReset);
             AddHookHandlerHook(luaEnv, "OnWireTriggerAnnouncementBox", ServerApi.Hooks.WireTriggerAnnouncementBox);
             AddHookHandlerHook(luaEnv, "OnWorldChristmasCheck", ServerApi.Hooks.WorldChristmasCheck);
