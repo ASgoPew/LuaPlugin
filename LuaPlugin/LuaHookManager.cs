@@ -44,8 +44,8 @@ namespace LuaPlugin
         {
             luaEnv.AddHook(new LuaHookHandler<Action>(luaEnv, "OnTick", (hook, state) =>
             {
-                if (state == true) Main.OnTick += hook.Handler;
-                else if (state == false) Main.OnTick -= hook.Handler;
+                if (state == true) Main.OnTickForThirdPartySoftwareOnly += hook.Handler;
+                else if (state == false) Main.OnTickForThirdPartySoftwareOnly -= hook.Handler;
                 else hook.Handler = () => hook.Invoke();
             }));
 
@@ -154,7 +154,7 @@ namespace LuaPlugin
             AddEventHandlerHook(luaEnv, "OnPacketSign", ref GetDataHandlers.Sign);
             AddEventHandlerHook(luaEnv, "OnPacketTeleport", ref GetDataHandlers.Teleport);
             AddEventHandlerHook(luaEnv, "OnPacketTileEdit", ref GetDataHandlers.TileEdit);
-            AddEventHandlerHook(luaEnv, "OnPacketTileKill", ref GetDataHandlers.TileKill);
+            //AddEventHandlerHook(luaEnv, "OnPacketTileKill", ref GetDataHandlers.TileKill);
             AddEventHandlerHook(luaEnv, "OnPacketTogglePvp", ref GetDataHandlers.TogglePvp);
         }
 
